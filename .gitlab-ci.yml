@@ -1,0 +1,10 @@
+before_script:
+  - apt-get update
+  - apt-get install -y --no-install-recommends qpdf
+
+learners-ci:
+  stage: test
+  image: rocker/tidyverse
+  script:
+    - R -e 'install.packages(c("xgboost", "glmnet"))'
+    - R -e 'devtools::check()'

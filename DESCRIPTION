@@ -1,0 +1,27 @@
+Package: learners
+Type: Package
+Title: API for Modeling
+Version: 0.0.0.9008
+Encoding: UTF-8
+LazyData: true
+Authors@R: c(
+  person("Advik", "Shreekumar", email = "advikshreekumar@gmail.com", role = c("aut", "cre"))
+  )
+Description: Tune, train, and predict with models.
+License: GPL-3
+RoxygenNote: 6.1.1
+Depends:
+    R (>= 3.5.0)
+Imports:
+    stats,
+    utils,
+    purrr,
+    rlang
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat (>= 2.1.0),
+    glmnet,
+    xgboost
+VignetteBuilder: knitr
+ByteCompile: TRUE
