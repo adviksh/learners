@@ -10,10 +10,10 @@ tune.learner <- function(object, features, tgt, wt = NULL, tune_folds, ...) {
   if (missing(tune_folds)) rlang::abort("tune_folds is missing")
 
   # Fast Return -------------------------------------------------------------
-  if (rlang::is_null(object$tune_fun)) return(object)
+  if (is.null(object$tune_fun)) return(object)
 
   # Body --------------------------------------------------------------
-  if (rlang::is_null(wt)) wt <- rep(1L, nrow(features))
+  if (is.null(wt)) wt <- rep(1L, nrow(features))
 
   tune_idx <- which(!is.na(tune_folds))
 
@@ -37,10 +37,10 @@ train.learner <- function(object, features, tgt, wt = NULL, ...) {
   if (missing(wt)) rlang::abort("wt is missing")
 
   # Fast Return -------------------------------------------------------------
-  if (rlang::is_null(object$train_fun)) return(object)
+  if (is.null(object$train_fun)) return(object)
 
   # Body --------------------------------------------------------------
-  if (rlang::is_null(wt)) wt <- rep(1L, nrow(features))
+  if (is.null(wt)) wt <- rep(1L, nrow(features))
 
   object$model <- object$train_fun(features = features,
                                    tgt      = tgt,
@@ -62,7 +62,7 @@ predict.learner <- function(object, newdata, ...) {
 tune_predict_ins.learner <- function(object, features, tgt, wt = NULL,
                                      tune_folds, ...) {
 
-  if (rlang::is_null(wt)) wt <- rep(1L, nrow(features))
+  if (is.null(wt)) wt <- rep(1L, nrow(features))
 
   tuned_learner   <- tune(object, features, tgt, wt, tune_folds)
   trained_learner <- train(tuned_learner, features, tgt, wt)
@@ -77,7 +77,7 @@ tune_predict_ins.learner <- function(object, features, tgt, wt = NULL,
 tune_predict_oos.learner <- function(object, features, tgt, wt = NULL,
                                      tune_folds, ...) {
 
-  if (rlang::is_null(wt)) wt <- rep(1, nrow(features))
+  if (is.null(wt)) wt <- rep(1, nrow(features))
 
   fold_vals <- setdiff(unique(tune_folds), NA)
 
@@ -104,7 +104,7 @@ tune_predict_oos.learner <- function(object, features, tgt, wt = NULL,
 tune_predict_oos_fold.learner <- function(object, features, tgt, wt = NULL,
                                           tune_folds, which_fold, ...) {
 
-  if (rlang::is_null(wt)) wt <- rep(1, nrow(features))
+  if (is.null(wt)) wt <- rep(1, nrow(features))
 
   tune_idx <- which(tune_folds != which_fold)
   pred_idx <- which(tune_folds == which_fold)

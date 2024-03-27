@@ -31,7 +31,7 @@ binary_elasticnet_tune = function(features, tgt, wt = rep(1, nrow(features)),
   if (workers > 1) {
     parallel = TRUE
     doFuture::registerDoFuture()
-    future::plan(multicore, workers = workers)
+    future::plan(future::multicore, workers = workers)
   } else {
     parallel = FALSE
   }
