@@ -59,7 +59,8 @@ binary_xgb_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                                    nrounds = 10000L,
                                    early_stopping_rounds = 20L)
 
-  binary_xgb_tuning_df <- purrr::map_dfr(binary_xgb_tuning, tidy_xgb_cv)
+  binary_xgb_tuning_df <- purrr::map(binary_xgb_tuning, tidy_xgb_cv)
+  binary_xgb_tuning_df = purrr::list_rbind(binary_xgb_tuning_df)
 
   best_iter   <- which.min(binary_xgb_tuning_df$rmse)
 

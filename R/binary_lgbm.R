@@ -64,7 +64,8 @@ binary_lgbm_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                                                        verbose = -1)
                                     })
 
-  binary_lgbm_tuning_df <- purrr::map_dfr(binary_lgbm_tuning, tidy_xgb_cv)
+  binary_lgbm_tuning_df <- purrr::map(binary_lgbm_tuning, tidy_xgb_cv)
+  binary_lgbm_tuning_df = purrr::list_rbind(binary_lgbm_tuning_df)
 
   best_iter   <- which.min(binary_lgbm_tuning_df$rmse)
 

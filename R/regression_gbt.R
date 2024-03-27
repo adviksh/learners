@@ -58,7 +58,8 @@ regr_gbt_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                                  early_stopping_rounds = 20L,
                                  verbose = FALSE)
 
-  regr_gbt_tuning_df <- purrr::map_dfr(regr_gbt_tuning, tidy_xgb_cv)
+  regr_gbt_tuning_df <- purrr::map(regr_gbt_tuning, tidy_xgb_cv)
+  regr_gbt_tuning_df = purrr::list_rbind(regr_gbt_tuning_df)
 
   best_iter   <- which.min(regr_gbt_tuning_df$rmse)
 

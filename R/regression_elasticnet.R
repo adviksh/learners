@@ -39,7 +39,8 @@ regr_elasticnet_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                loss      = fit$cvm)
   }
 
-  hyperparams <- purrr::map2_dfr(cv_fits, alpha, tidy_fit)
+  hyperparams <- purrr::map2(cv_fits, alpha, tidy_fit)
+  hyperparams = purrr::list_rbind(hyperparams)
 
   best_hyperparam_row <- which.min(hyperparams$loss)
   best_mod_idx        <- match(hyperparams$alpha[best_hyperparam_row], alpha)
