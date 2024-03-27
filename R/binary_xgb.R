@@ -17,33 +17,33 @@
 #' each tree. Values less than 1 will speed up computation, and may reduce
 #' overfitting.
 #'
-binary_gbt <- structure(
+binary_xgb <- structure(
   class = c("learner_constructor", "function"),
   function(eta = 0.05,
-           max_depth = 1:6,
+           max_depth = 0:6,
            subsample = 1,
            colsample_bytree = 1) {
-    make_learner(name       = "binary_gbt",
-                 tune_fun    = purrr::partial(binary_gbt_tune,
-                                             eta = eta,
-                                             max_depth = max_depth,
-                                             subsample = subsample,
-                                             colsample_bytree = colsample_bytree),
-                 predict_fun = binary_gbt_predict)
+    make_learner(name       = "binary_xgb",
+                 tune_fun    = purrr::partial(binary_xgb_tune,
+                                              eta = eta,
+                                              max_depth = max_depth,
+                                              subsample = subsample,
+                                              colsample_bytree = colsample_bytree),
+                 predict_fun = binary_xgb_predict)
   }
 )
 
 # Methods -----------------------------------------------------------------
-binary_gbt_tune <- function(features, tgt, wt = rep(1, nrow(features)),
+binary_xgb_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                             tune_folds, eta, max_depth, subsample,
                             colsample_bytree) {
 
-  binary_gbt_design <- expand.grid(max_depth = max_depth,
+  binary_xgb_design <- expand.grid(max_depth = max_depth,
                                    eta = eta,
                                    subsample = subsample,
                                    colsample_bytree = colsample_bytree)
 
-  binary_gbt_tuning <- purrr::pmap(binary_gbt_design,
+  binary_xgb_tuning <- purrr::pmap(binary_xgb_design,
                                    xgboost::xgb.cv,
                                    data = xgboost::xgb.DMatrix(data = features,
                                                                label = tgt,
@@ -51,33 +51,35 @@ binary_gbt_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                                    folds = split(seq_along(tune_folds),
                                                  tune_folds),
                                    params  = list(nthread = 1L,
-                                                  objective = "binary:logistic",
-                                                  eval.metric = "rmse"),
+                                                  objective   = "binary:logistic",
+                                                  eval.metric = "rmse",
+                                                  tree_method = 'approx',
+                                                  verbosity   = 0),
+                                   verbose = FALSE,
                                    nrounds = 10000L,
-                                   early_stopping_rounds = 20L,
-                                   verbose = FALSE)
+                                   early_stopping_rounds = 20L)
 
-  binary_gbt_tuning_df <- purrr::map_dfr(binary_gbt_tuning, tidy_xgb_cv)
+  binary_xgb_tuning_df <- purrr::map_dfr(binary_xgb_tuning, tidy_xgb_cv)
 
-  best_iter   <- which.min(binary_gbt_tuning_df$rmse)
+  best_iter   <- which.min(binary_xgb_tuning_df$rmse)
 
-  purrr::partial(binary_gbt_train,
-                 params  = binary_gbt_tuning_df$params[[best_iter]],
-                 nrounds = binary_gbt_tuning_df$nrounds[[best_iter]])
+  purrr::partial(binary_xgb_train,
+                 params  = binary_xgb_tuning_df$params[[best_iter]],
+                 nrounds = binary_xgb_tuning_df$nrounds[[best_iter]])
 }
 
-binary_gbt_train <- function(features, tgt, wt, params, nrounds) {
+binary_xgb_train <- function(features, tgt, wt, params, nrounds) {
 
   if (is.factor(tgt)) tgt <- as.integer(tgt) - 1L
 
   list(fit = xgboost::xgboost(data = features, label = tgt, weight = wt,
-                               params = params,
-                               nrounds = nrounds,
-                               verbose = FALSE),
+                              params = params,
+                              verbose = FALSE,
+                              nrounds = nrounds),
        params = c(params, nrounds = nrounds))
 }
 
-binary_gbt_predict <- function(model, features) {
+binary_xgb_predict <- function(model, features) {
   as.numeric(stats::predict(model$fit, features))
 }
 

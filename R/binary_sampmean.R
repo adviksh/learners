@@ -14,7 +14,7 @@ binary_sampmean <- structure(
 )
 
 # Methods -----------------------------------------------------------------
-sampmean_train <- function(features, tgt, wt, params) {
+sampmean_train <- function(features, tgt, wt) {
 
   if (is.null(wt)) wt <- rep(1L, length(tgt))
   if (is.factor(tgt)) tgt <- as.integer(tgt) - 1L

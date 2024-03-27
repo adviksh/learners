@@ -11,8 +11,13 @@
 \alias{tune_predict_oos_fold.learner}
 \title{Learner Class}
 \usage{
-make_learner(name = NULL, tune_fun = NULL, train_fun = NULL,
-  model = NULL, predict_fun = stats::predict)
+make_learner(
+  name = NULL,
+  tune_fun = NULL,
+  train_fun = NULL,
+  model = NULL,
+  predict_fun = stats::predict
+)
 
 \method{tune}{learner}(object, features, tgt, wt = NULL, tune_folds, ...)
 
@@ -20,14 +25,19 @@ make_learner(name = NULL, tune_fun = NULL, train_fun = NULL,
 
 \method{predict}{learner}(object, newdata, ...)
 
-\method{tune_predict_ins}{learner}(object, features, tgt, wt = NULL,
-  tune_folds, ...)
+\method{tune_predict_ins}{learner}(object, features, tgt, wt = NULL, tune_folds, ...)
 
-\method{tune_predict_oos}{learner}(object, features, tgt, wt = NULL,
-  tune_folds, ...)
+\method{tune_predict_oos}{learner}(object, features, tgt, wt = NULL, tune_folds, ...)
 
-\method{tune_predict_oos_fold}{learner}(object, features, tgt, wt = NULL,
-  tune_folds, which_fold, ...)
+\method{tune_predict_oos_fold}{learner}(
+  object,
+  features,
+  tgt,
+  wt = NULL,
+  tune_folds,
+  which_fold,
+  ...
+)
 }
 \arguments{
 \item{name}{A name for the learner.}

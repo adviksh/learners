@@ -9,7 +9,7 @@
 binary_stacking <- structure(
   class = c("learner_constructor", "function"),
   function(learners = list(elasticnet = binary_elasticnet(),
-                           gbt = binary_gbt())) {
+                           xgb = binary_xgb())) {
     make_learner(name        = "binary_stacking",
                  tune_fun    = purrr::partial(binary_stacking_tune,
                                               learners = learners),

@@ -4,8 +4,9 @@
 \alias{regr_stacking}
 \title{Stacking for Regression}
 \usage{
-regr_stacking(learners = list(elasticnet = regr_elasticnet(), gbt =
-  regr_gbt()))
+regr_stacking(
+  learners = list(elasticnet = regr_elasticnet(), gbt = regr_gbt())
+)
 }
 \arguments{
 \item{learners}{a list of learners}

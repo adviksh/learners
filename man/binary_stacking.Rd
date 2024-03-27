@@ -4,8 +4,9 @@
 \alias{binary_stacking}
 \title{Stacking for Classification}
 \usage{
-binary_stacking(learners = list(elasticnet = binary_elasticnet(), gbt =
-  binary_gbt()))
+binary_stacking(
+  learners = list(elasticnet = binary_elasticnet(), gbt = binary_gbt())
+)
 }
 \arguments{
 \item{learners}{a list of learners}

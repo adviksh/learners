@@ -16,8 +16,15 @@ tune_predict_ins(object, features, tgt, wt = NULL, tune_folds, ...)
 
 tune_predict_oos(object, features, tgt, wt = NULL, tune_folds, ...)
 
-tune_predict_oos_fold(object, features, tgt, wt = NULL, tune_folds,
-  which_fold, ...)
+tune_predict_oos_fold(
+  object,
+  features,
+  tgt,
+  wt = NULL,
+  tune_folds,
+  which_fold,
+  ...
+)
 }
 \arguments{
 \item{object}{a model}
