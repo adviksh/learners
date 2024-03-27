@@ -1,5 +1,4 @@
 #' Convex Combination for Regression
-#' @export
 #'
 #' @return A model that fits a weighted average of the inputs, with weights
 #' all nonnegative and summing to 1.

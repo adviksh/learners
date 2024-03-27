@@ -1,5 +1,4 @@
-#' Logistic elasticnet Regression
-#' @export
+#' Elasticnet Regression
 #'
 #' @description Construct a elasticnet regression model with glmnet.
 #'

@@ -17,7 +17,8 @@ binary_elasticnet = structure(
                  tune_fun    = purrr::partial(binary_elasticnet_tune,
                                               alpha   = alpha,
                                               workers = workers),
-                 predict_fun = binary_elasticnet_predict)
+                 predict_fun = binary_elasticnet_predict,
+                 predict_tuned_fun = binary_elasticnet_predict_tuned)
   }
 )
 
@@ -43,6 +44,7 @@ binary_elasticnet_tune = function(features, tgt, wt = rep(1, nrow(features)),
                                           foldid  = tune_folds,
                                           family  = "binomial",
                                           alpha   = .x,
+                                          keep    = TRUE,
                                           parallel = parallel))
 
   tidy_fit = function(fit, alpha) {
@@ -52,16 +54,35 @@ binary_elasticnet_tune = function(features, tgt, wt = rep(1, nrow(features)),
                loss      = fit$cvm)
   }
 
+  extract_best_predictions = function(fits) {
+    # Get the lowest MSE from each regression
+    glmnet_cvm = purrr::map_dbl(fits, function(f) { min(f$cvm) })
+
+    # Figure out which index in the output corresponds to predictions from the best fit
+    best_fit = fits[[ which.min(glmnet_cvm) ]]
+    lambda_min_idx = match(best_fit$lambda.min,
+                           best_fit$lambda)
+
+    # Return
+    z_hat = best_fit$fit.preval[, lambda_min_idx]
+    as.numeric(plogis(z_hat))
+  }
+
   hyperparams = purrr::map2(cv_fits, alpha, tidy_fit)
   hyperparams = purrr::list_rbind(hyperparams)
 
   best_hyperparam_row = which.min(hyperparams$loss)
   best_mod_idx        = match(hyperparams$alpha[best_hyperparam_row], alpha)
 
-  purrr::partial(binary_elasticnet_train,
-                 lambda  = cv_fits[[best_mod_idx]]$lambda,
-                 s       = hyperparams$lambda[best_hyperparam_row],
-                 alpha   = hyperparams$alpha[best_hyperparam_row])
+  tune_res = list(
+    tuned_model = extract_best_predictions(cv_fits),
+    train_fun   = purrr::partial(binary_elasticnet_train,
+                                 lambda  = cv_fits[[best_mod_idx]]$lambda,
+                                 s       = hyperparams$lambda[best_hyperparam_row],
+                                 alpha   = hyperparams$alpha[best_hyperparam_row])
+  )
+
+  tune_res
 }
 
 binary_elasticnet_train = function(features, tgt, wt, lambda, s, alpha) {
@@ -81,3 +102,6 @@ binary_elasticnet_predict = function(model, features) {
                             type = "response"))
 }
 
+binary_elasticnet_predict_tuned = function(model, features, tune_folds) {
+  return(model)
+}

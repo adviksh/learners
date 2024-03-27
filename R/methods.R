@@ -29,6 +29,12 @@ tune_predict_ins <- function(object, features, tgt, wt = NULL, tune_folds,
 
 #' @export
 #' @rdname methods
+predict_oos <- function(object, features, tgt, wt = NULL, tune_folds,
+                        ...) {
+  UseMethod("tune_predict_oos")
+}
+#' @export
+#' @rdname methods
 tune_predict_oos <- function(object, features, tgt, wt = NULL, tune_folds,
                              ...) {
   UseMethod("tune_predict_oos")

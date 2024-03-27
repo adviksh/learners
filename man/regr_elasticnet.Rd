@@ -2,7 +2,7 @@
 % Please edit documentation in R/regression_elasticnet.R
 \name{regr_elasticnet}
 \alias{regr_elasticnet}
-\title{Logistic elasticnet Regression}
+\title{Elasticnet Regression}
 \usage{
 regr_elasticnet(alpha = seq(0, 1, length.out = 5))
 }

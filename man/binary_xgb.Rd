@@ -9,6 +9,7 @@ binary_xgb(
   max_depth = 0:6,
   subsample = 1,
   colsample_bytree = 1,
+  nrounds = 10000L,
   workers = 1
 )
 }

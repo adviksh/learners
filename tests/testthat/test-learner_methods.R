@@ -34,10 +34,11 @@ test_that("tune_predict_oos_fold maintains out-of-sample status", {
   detect_tune <- function(features, tgt, wt, tune_folds) {
     if (1 %in% tgt) stop("OOS fold caught in tuning")
 
-    return(detect_train)
+    list(train_fun = detect_train,
+         tuned_model = NULL)
   }
 
-  detecting_learner <- make_learner(tune_fun  = detect_tune,
+  detecting_learner <- make_learner(tune_fun    = detect_tune,
                                     predict_fun = detect_predict)
 
   expect_error(tune_predict_oos_fold(detecting_learner,
@@ -64,11 +65,12 @@ test_that("tune_predict_oos ...", {
 
     tune_count[features] <<- tune_count[features] + 1
 
-    return(tally_train)
+    list(train_fun  = tally_train,
+         tuned_model = NULL)
   }
 
   counting_learner <- make_learner(
-    tune_fun = tally_tune,
+    tune_fun   = tally_tune,
     predict_fun = tally_predict
   )
 

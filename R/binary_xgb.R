@@ -23,6 +23,7 @@ binary_xgb <- structure(
            max_depth = 0:6,
            subsample = 1,
            colsample_bytree = 1,
+           nrounds = 10000L,
            workers = 1) {
     make_learner(name       = "binary_xgb",
                  tune_fun    = purrr::partial(binary_xgb_tune,
@@ -30,15 +31,17 @@ binary_xgb <- structure(
                                               max_depth = max_depth,
                                               subsample = subsample,
                                               colsample_bytree = colsample_bytree,
+                                              nrounds = nrounds,
                                               workers = workers),
-                 predict_fun = binary_xgb_predict)
+                 predict_fun = binary_xgb_predict,
+                 predict_tuned_fun = binary_xgb_predict_tuned)
   }
 )
 
 # Methods -----------------------------------------------------------------
 binary_xgb_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                             tune_folds, eta, max_depth, subsample,
-                            colsample_bytree, workers) {
+                            colsample_bytree, nrounds, workers) {
 
   binary_xgb_design <- expand.grid(max_depth = max_depth,
                                    eta = eta,
@@ -57,18 +60,26 @@ binary_xgb_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                                                   tree_method = 'approx',
                                                   nthread     = workers,
                                                   verbosity   = 0),
+                                   prediction = TRUE,
                                    verbose = FALSE,
-                                   nrounds = 10000L,
+                                   nrounds = nrounds,
                                    early_stopping_rounds = 20L)
 
   binary_xgb_tuning_df <- purrr::map(binary_xgb_tuning, tidy_xgb_cv)
-  binary_xgb_tuning_df = purrr::list_rbind(binary_xgb_tuning_df)
+  binary_xgb_tuning_df = purrr::list_rbind(binary_xgb_tuning_df,
+                                           names_to = '.tune_index')
 
   best_iter   <- which.min(binary_xgb_tuning_df$rmse)
+  best_tune_index = binary_xgb_tuning_df[[".tune_index"]][best_iter]
 
-  purrr::partial(binary_xgb_train,
-                 params  = binary_xgb_tuning_df$params[[best_iter]],
-                 nrounds = binary_xgb_tuning_df$nrounds[[best_iter]])
+  tune_res = list(
+    tuned_model = binary_xgb_tuning[[best_tune_index]]$pred,
+    train_fun   = purrr::partial(binary_xgb_train,
+                                 params  = binary_xgb_tuning_df$params[[best_iter]],
+                                 nrounds = binary_xgb_tuning_df$nrounds[[best_iter]])
+  )
+
+  tune_res
 }
 
 binary_xgb_train <- function(features, tgt, wt, params, nrounds) {
@@ -86,3 +97,6 @@ binary_xgb_predict <- function(model, features) {
   as.numeric(stats::predict(model$fit, features))
 }
 
+binary_xgb_predict_tuned = function(model, features, tune_folds) {
+  return(model)
+}

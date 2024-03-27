@@ -4,6 +4,7 @@
 \alias{tune}
 \alias{train}
 \alias{tune_predict_ins}
+\alias{predict_oos}
 \alias{tune_predict_oos}
 \alias{tune_predict_oos_fold}
 \title{Methods}
@@ -13,6 +14,8 @@ tune(object, features, tgt, wt = NULL, tune_folds, ...)
 train(object, features, tgt, wt = NULL, ...)
 
 tune_predict_ins(object, features, tgt, wt = NULL, tune_folds, ...)
+
+predict_oos(object, features, tgt, wt = NULL, tune_folds, ...)
 
 tune_predict_oos(object, features, tgt, wt = NULL, tune_folds, ...)
 

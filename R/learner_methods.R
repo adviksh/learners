@@ -17,10 +17,13 @@ tune.learner <- function(object, features, tgt, wt = NULL, tune_folds, ...) {
 
   tune_idx <- which(!is.na(tune_folds))
 
-  object$train_fun <- object$tune_fun(features   = features[tune_idx, , drop = FALSE],
-                                      tgt        = tgt[tune_idx],
-                                      wt         = wt[tune_idx],
-                                      tune_folds = tune_folds[tune_idx])
+  tune_res = object$tune_fun(features   = features[tune_idx, , drop = FALSE],
+                             tgt        = tgt[tune_idx],
+                             wt         = wt[tune_idx],
+                             tune_folds = tune_folds[tune_idx])
+
+  object$train_fun   = tune_res$train_fun
+  object$tuned_model = tune_res$tuned_model
 
   return(object)
 
@@ -42,9 +45,9 @@ train.learner <- function(object, features, tgt, wt = NULL, ...) {
   # Body --------------------------------------------------------------
   if (is.null(wt)) wt <- rep(1L, nrow(features))
 
-  object$model <- object$train_fun(features = features,
-                                   tgt      = tgt,
-                                   wt       = wt)
+  object$trained_model <- object$train_fun(features = features,
+                                           tgt      = tgt,
+                                           wt       = wt)
 
   return(object)
 }
@@ -53,9 +56,45 @@ train.learner <- function(object, features, tgt, wt = NULL, ...) {
 #' @export
 predict.learner <- function(object, newdata, ...) {
 
-  object$predict_fun(object$model, newdata)
+  object$predict_fun(object$trained_model, newdata)
 
 }
+
+#' @rdname learner
+#' @export
+predict_oos.learner = function(object, features, tgt, wt = NULL, tune_folds, ...) {
+
+  if (is.null(wt)) wt <- rep(1, nrow(features))
+
+  tuned_learner = tune(object, features, tgt, wt, tune_folds)
+
+  if (is.null(tuned_learner$tuned_fit)) {
+
+    pred_list <- lapply(fold_vals,
+                        train_predict_oos_fold,
+                        object     = object,
+                        features   = features,
+                        tgt        = tgt,
+                        wt         = wt,
+                        tune_folds = tune_folds)
+
+    predictions <- rep(NA, length(tgt))
+
+    for (ii in seq_along(fold_vals)) {
+      predictions[which(tune_folds == fold_vals[ii])] <- pred_list[[ii]]
+    }
+
+  } else {
+
+    predictions = object$predict_tuned_fun(object     = object$tuned_fit,
+                                           features   = features,
+                                           tune_folds = tune_folds)
+
+  }
+
+  return(predictions)
+}
+
 
 #' @rdname learner
 #' @export
@@ -116,6 +155,28 @@ tune_predict_oos_fold.learner <- function(object, features, tgt, wt = NULL,
                         tune_folds = tune_folds[tune_idx])
 
   trained_learner <- train(object = tuned_learner,
+                           features = features[tune_idx, , drop = FALSE],
+                           tgt = tgt[tune_idx],
+                           wt = wt[tune_idx])
+
+  predictions <- stats::predict(trained_learner,
+                                features[pred_idx, , drop = FALSE])
+
+  return(predictions)
+
+}
+
+#' @rdname learner
+#' @export
+train_predict_oos_fold.learner <- function(object, features, tgt, wt = NULL,
+                                           tune_folds, which_fold, ...) {
+
+  if (is.null(wt)) wt <- rep(1, nrow(features))
+
+  tune_idx <- which(tune_folds != which_fold)
+  pred_idx <- which(tune_folds == which_fold)
+
+  trained_learner <- train(object = object,
                            features = features[tune_idx, , drop = FALSE],
                            tgt = tgt[tune_idx],
                            wt = wt[tune_idx])

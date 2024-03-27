@@ -1,5 +1,5 @@
 #' Gradient Boosted Tree Classifier
-#' @export
+#'
 #' @description Construct a gradient boosted tree classifier using xgboost.
 #' All parameters can be passed as single values, or as vectors. Performs
 #' grid search over all combinations of provided values, using early stopping

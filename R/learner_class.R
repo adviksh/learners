@@ -43,7 +43,8 @@
 #' @param name A name for the learner.
 #' @param tune_fun A tuning function.
 #' @param train_fun A training function.
-#' @param model A trained model.
+#' @param tuned_model A tuned model.
+#' @param trained_model A trained model.
 #' @param predict_fun A prediction function.
 #' @param object (learner) A learner object, as created by make_learner()
 #' @param features (numeric matrix)
@@ -60,14 +61,18 @@ NULL
 make_learner <- function(name = NULL,
                          tune_fun = NULL,
                          train_fun = NULL,
-                         model = NULL,
-                         predict_fun = stats::predict) {
+                         tuned_model = NULL,
+                         trained_model = NULL,
+                         predict_fun = stats::predict,
+                         predict_tuned_fun = NULL) {
 
   structure(list(name = name,
                  tune_fun = tune_fun,
                  train_fun = train_fun,
-                 model = model,
-                 predict_fun = predict_fun),
+                 tuned_model = tuned_model,
+                 trained_model = trained_model,
+                 predict_fun = predict_fun,
+                 predict_tuned_fun = predict_tuned_fun),
             class = c(name, "learner"))
 
 }

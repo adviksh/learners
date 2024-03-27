@@ -6,17 +6,21 @@
 \alias{tune.learner}
 \alias{train.learner}
 \alias{predict.learner}
+\alias{predict_oos.learner}
 \alias{tune_predict_ins.learner}
 \alias{tune_predict_oos.learner}
 \alias{tune_predict_oos_fold.learner}
+\alias{train_predict_oos_fold.learner}
 \title{Learner Class}
 \usage{
 make_learner(
   name = NULL,
   tune_fun = NULL,
   train_fun = NULL,
-  model = NULL,
-  predict_fun = stats::predict
+  tuned_model = NULL,
+  trained_model = NULL,
+  predict_fun = stats::predict,
+  predict_tuned_fun = NULL
 )
 
 \method{tune}{learner}(object, features, tgt, wt = NULL, tune_folds, ...)
@@ -25,11 +29,23 @@ make_learner(
 
 \method{predict}{learner}(object, newdata, ...)
 
+\method{predict_oos}{learner}(object, features, tgt, wt = NULL, tune_folds, ...)
+
 \method{tune_predict_ins}{learner}(object, features, tgt, wt = NULL, tune_folds, ...)
 
 \method{tune_predict_oos}{learner}(object, features, tgt, wt = NULL, tune_folds, ...)
 
 \method{tune_predict_oos_fold}{learner}(
+  object,
+  features,
+  tgt,
+  wt = NULL,
+  tune_folds,
+  which_fold,
+  ...
+)
+
+train_predict_oos_fold.learner(
   object,
   features,
   tgt,
@@ -46,7 +62,9 @@ make_learner(
 
 \item{train_fun}{A training function.}
 
-\item{model}{A trained model.}
+\item{tuned_model}{A tuned model.}
+
+\item{trained_model}{A trained model.}
 
 \item{predict_fun}{A prediction function.}
 
