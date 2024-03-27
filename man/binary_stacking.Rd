@@ -5,7 +5,7 @@
 \title{Stacking for Classification}
 \usage{
 binary_stacking(
-  learners = list(elasticnet = binary_elasticnet(), gbt = binary_gbt())
+  learners = list(elasticnet = binary_elasticnet(), xgb = binary_xgb())
 )
 }
 \arguments{

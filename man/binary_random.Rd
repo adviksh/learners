@@ -4,7 +4,7 @@
 \alias{binary_random}
 \title{Random Noise for Classification}
 \usage{
-binary_random()
+binary_random(seed = 1)
 }
 \value{
 A model that makes random predictions for a binary outcome

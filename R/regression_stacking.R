@@ -1,5 +1,5 @@
 #' Stacking for Regression
-#' @export
+#'
 #' @description Construct a stacked model
 #'
 #' @return A stacking model for continuous outcomes.

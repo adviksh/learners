@@ -22,13 +22,15 @@ binary_xgb <- structure(
   function(eta = 0.05,
            max_depth = 0:6,
            subsample = 1,
-           colsample_bytree = 1) {
+           colsample_bytree = 1,
+           workers = 1) {
     make_learner(name       = "binary_xgb",
                  tune_fun    = purrr::partial(binary_xgb_tune,
                                               eta = eta,
                                               max_depth = max_depth,
                                               subsample = subsample,
-                                              colsample_bytree = colsample_bytree),
+                                              colsample_bytree = colsample_bytree,
+                                              workers = workers),
                  predict_fun = binary_xgb_predict)
   }
 )
@@ -36,7 +38,7 @@ binary_xgb <- structure(
 # Methods -----------------------------------------------------------------
 binary_xgb_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                             tune_folds, eta, max_depth, subsample,
-                            colsample_bytree) {
+                            colsample_bytree, workers) {
 
   binary_xgb_design <- expand.grid(max_depth = max_depth,
                                    eta = eta,
@@ -50,10 +52,10 @@ binary_xgb_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                                                                weight = wt),
                                    folds = split(seq_along(tune_folds),
                                                  tune_folds),
-                                   params  = list(nthread = 1L,
-                                                  objective   = "binary:logistic",
+                                   params  = list(objective   = "binary:logistic",
                                                   eval.metric = "rmse",
                                                   tree_method = 'approx',
+                                                  nthread     = workers,
                                                   verbosity   = 0),
                                    verbose = FALSE,
                                    nrounds = 10000L,

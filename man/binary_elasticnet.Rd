@@ -4,10 +4,12 @@
 \alias{binary_elasticnet}
 \title{Logistic elasticnet Regression}
 \usage{
-binary_elasticnet(alpha = seq(0, 1, length.out = 5))
+binary_elasticnet(alpha = seq(0, 1, length.out = 5), workers = 1)
 }
 \arguments{
 \item{alpha}{sequence of alpha values to search over}
+
+\item{workers}{integer number of cores to use for parallelized tuning}
 }
 \value{
 A logistic elasticnet regression model for binary outcomes,

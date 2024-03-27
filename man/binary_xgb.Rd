@@ -4,7 +4,13 @@
 \alias{binary_xgb}
 \title{Gradient Boosted Tree Classifier}
 \usage{
-binary_xgb(eta = 0.05, max_depth = 0:6, subsample = 1, colsample_bytree = 1)
+binary_xgb(
+  eta = 0.05,
+  max_depth = 0:6,
+  subsample = 1,
+  colsample_bytree = 1,
+  workers = 1
+)
 }
 \arguments{
 \item{eta}{learning rate.}

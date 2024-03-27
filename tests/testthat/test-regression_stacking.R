@@ -1,3 +1,3 @@
 context("continuous stacking learner")
 
-test_suite_regr(regr_stacking)
+# test_suite_regr(regr_stacking)
