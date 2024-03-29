@@ -18,75 +18,106 @@
 #' overfitting.
 #' @param num_threads number of threads to use, to speed up training and prediction
 #'
-binary_lgbm <- structure(
+binary_lgbm = structure(
   class = c("learner_constructor", "function"),
   function(learning_rate = 0.05,
            max_depth = c(0:6),
            bagging_fraction = 1,
            feature_fraction = 1,
-           num_threads      = 1) {
+           nrounds = 10000L,
+           workers = 1) {
     make_learner(name       = "binary_lgbm",
                  tune_fun    = purrr::partial(binary_lgbm_tune,
                                               learning_rate = learning_rate,
                                               max_depth = max_depth,
                                               bagging_fraction = bagging_fraction,
                                               feature_fraction = feature_fraction,
-                                              num_threads = num_threads),
-                 predict_fun = binary_lgbm_predict)
+                                              nrounds = 10000L,
+                                              workers = 1),
+                 predict_fun = binary_lgbm_predict,
+                 predict_tuned_fun = binary_lgbm_predict_tuned)
   }
 )
 
 # Methods -----------------------------------------------------------------
-binary_lgbm_tune <- function(features, tgt, wt = rep(1, nrow(features)),
-                             tune_folds, learning_rate, max_depth, bagging_fraction,
-                             feature_fraction, num_threads) {
+binary_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
+                            tune_folds, learning_rate, max_depth, bagging_fraction,
+                            feature_fraction, nrounds, workers) {
 
-  binary_lgbm_design <- expand.grid(max_depth = max_depth,
-                                    learning_rate = learning_rate,
-                                    bagging_fraction = bagging_fraction,
-                                    feature_fraction = feature_fraction)
+  binary_lgbm_design = expand.grid(max_depth = max_depth,
+                                   learning_rate = learning_rate,
+                                   bagging_fraction = bagging_fraction,
+                                   feature_fraction = feature_fraction)
 
-  binary_lgbm_tuning <- purrr::pmap(binary_lgbm_design,
-                                    function(...) {
-                                      params = list(...)
-                                      params$num_threads = num_threads
-                                      params$objective   = 'binary'
-                                      params$metric      = 'auc'
-                                      params$verbosity   = -1
+  binary_lgbm_tuning = purrr::pmap(binary_lgbm_design,
+                                   function(...) {
+                                     params = list(...)
+                                     params$num_threads = workers
+                                     params$objective   = 'binary'
+                                     params$metric      = 'auc'
 
-                                      lightgbm::lgb.cv(params = params,
-                                                       data   = features,
-                                                       label  = tgt,
-                                                       weight = wt,
-                                                       folds  = split(seq_along(tune_folds), tune_folds),
-                                                       nrounds = 10000L,
-                                                       early_stopping_rounds = 20L,
-                                                       verbose = -1)
-                                    })
+                                     quiet_cv = purrr::quietly(lightgbm::lgb.cv)
 
-  binary_lgbm_tuning_df <- purrr::map(binary_lgbm_tuning, tidy_xgb_cv)
-  binary_lgbm_tuning_df = purrr::list_rbind(binary_lgbm_tuning_df)
+                                     out = quiet_cv(params = params,
+                                                    data   = features,
+                                                    label  = tgt,
+                                                    weight = wt,
+                                                    folds  = split(seq_along(tune_folds), tune_folds),
+                                                    nrounds = nrounds,
+                                                    early_stopping_rounds = 20L,
+                                                    verbose = -1)
 
-  best_iter   <- which.min(binary_lgbm_tuning_df$rmse)
+                                     out$result
+                                   })
 
-  purrr::partial(binary_lgbm_train,
-                 params  = binary_lgbm_tuning_df$params[[best_iter]],
-                 nrounds = binary_lgbm_tuning_df$nrounds[[best_iter]])
+  binary_lgbm_tuning_df = purrr::map(binary_lgbm_tuning, tidy_lgbm_cv)
+  binary_lgbm_tuning_df = purrr::list_rbind(binary_lgbm_tuning_df,
+                                            names_to = "idx_design")
+
+  best_param_row = which.min(binary_lgbm_tuning_df$rmse)
+  best_fit_iter  = binary_lgbm_tuning_df$idx_design[best_param_row]
+  best_fit = binary_lgbm_tuning[[best_fit_iter]]
+
+  # Get tuned predictions
+  tgt_hat_list = purrr::map2(best_fit$boosters,
+                             split(seq_along(tune_folds), tune_folds),
+                             function(b, f) {
+                               data.frame(idx     = f,
+                                          tgt_hat = predict(b$booster, features[f,]))
+                             })
+
+  tgt_hat_tb = purrr::list_rbind(tgt_hat_list)
+  tgt_hat_tb = tgt_hat_tb[rank(tgt_hat_tb$idx), ]
+
+  # Return
+  tune_res = list(
+    tuned_model = as.numeric(tgt_hat_tb$tgt_hat),
+    train_fun   = purrr::partial(binary_lgbm_train,
+                                 params  = binary_lgbm_tuning_df$params[[best_param_row]],
+                                 nrounds = binary_lgbm_tuning_df$nrounds[[best_param_row]]))
+
 }
 
-binary_lgbm_train <- function(features, tgt, wt, params, nrounds) {
+binary_lgbm_train = function(features, tgt, wt, params, nrounds) {
 
-  if (is.factor(tgt)) tgt <- as.integer(tgt) - 1L
+  if (is.factor(tgt)) tgt = as.integer(tgt) - 1L
 
-  list(fit = lightgbm::lightgbm(data = features, label = tgt,
-                                weight = wt,
-                                params = params,
-                                nrounds = nrounds,
-                                verbose = -1),
+  quiet_lgb = purrr::quietly(lightgbm::lightgbm)
+  fit = quiet_lgb(data = features, label = tgt,
+                  weight = wt,
+                  params = params,
+                  nrounds = nrounds,
+                  verbose = -1)
+
+  list(fit    = fit$result,
        params = c(params, nrounds = nrounds))
 }
 
-binary_lgbm_predict <- function(model, features) {
+binary_lgbm_predict = function(model, features) {
   as.numeric(stats::predict(model$fit, features))
+}
+
+binary_lgbm_predict_tuned = function(model, features, tune_folds) {
+  return(model)
 }
 

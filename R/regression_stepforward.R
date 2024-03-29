@@ -26,10 +26,10 @@ regr_stepforward_tune = function(features, tgt, wt = rep(1, nrow(features)), tun
     parallel = FALSE
   }
 
-  cv_fits = regsubsets_cv(x = features,
-                          y = tgt,
-                          weights  = wt,
-                          parallel = parallel)
+  cv_fits = regr_regsubsets_cv(x = features,
+                               y = tgt,
+                               weights  = wt,
+                               parallel = parallel)
 
   best_idx = which.min(purrr::map_dbl(cv_fits, "mse"))
 
@@ -73,7 +73,7 @@ regr_stepforward_predict_tuned = function(model, features, tune_folds) {
   return(model)
 }
 
-regsubsets_cv = function(x, y, weights, parallel = FALSE) {
+regr_regsubsets_cv = function(x, y, weights = rep(1, length(y)), parallel = FALSE) {
 
   # fit forward regression
   fits_leaps = leaps::regsubsets(x = x,
@@ -90,7 +90,7 @@ regsubsets_cv = function(x, y, weights, parallel = FALSE) {
   # get leave-one-out error
   if (parallel) {
     if (rlang::is_installed("furrr") == FALSE) {
-      stop("Running regsubsets_cv in parallel requires the package 'furrr'")
+      stop("Running regr_regsubsets_cv in parallel requires the package 'furrr'")
     }
     mapper = furrr::future_map
   } else {
@@ -103,7 +103,7 @@ regsubsets_cv = function(x, y, weights, parallel = FALSE) {
                         fit = lm(y ~ xs, weights = w, model = FALSE)
                         hat = hatvalues(fit)
 
-                        rsd_loo = fit$residuals / hat
+                        rsd_loo = fit$residuals / (1 - hat)
 
                         list(n_cols = length(which_cols),
                              mse    = mean((rsd_loo)^2),

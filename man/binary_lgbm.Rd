@@ -9,7 +9,8 @@ binary_lgbm(
   max_depth = c(0:6),
   bagging_fraction = 1,
   feature_fraction = 1,
-  num_threads = 1
+  nrounds = 10000L,
+  workers = 1
 )
 }
 \arguments{

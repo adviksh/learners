@@ -24,6 +24,16 @@ tidy_xgb_cv <- function(result){
              rmse    = result$evaluation_log$test_rmse_mean[result$best_iteration])
 }
 
+tidy_lgbm_cv = function(result) {
+
+  params = result$boosters[[1]]$booster$params
+  params$metric = params$metric[[1]]
+  params$early_stopping_round = NULL
+
+  data.frame(params  = I(list(params)),
+             nrounds = result$best_iter,
+             rmse    = result$best_score)
+}
 
 bern_loglik <- function(tgt_hat, tgt, wt) {
   sum(wt * stats::dbinom(tgt, size = 1, prob = tgt_hat, log = TRUE))
