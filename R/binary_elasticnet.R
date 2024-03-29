@@ -37,6 +37,9 @@ binary_elasticnet_tune = function(features, tgt, wt = rep(1, nrow(features)),
     parallel = FALSE
   }
 
+  max_vars = min(min(table(tune_folds)) - 1,
+                 ncol(features))
+
   cv_fits = purrr::map(alpha,
                        ~glmnet::cv.glmnet(x = features,
                                           y = tgt,
@@ -45,7 +48,8 @@ binary_elasticnet_tune = function(features, tgt, wt = rep(1, nrow(features)),
                                           family  = "binomial",
                                           alpha   = .x,
                                           keep    = TRUE,
-                                          parallel = parallel))
+                                          parallel = parallel,
+                                          pmax     = max_vars))
 
   tidy_fit = function(fit, alpha) {
 
@@ -90,7 +94,7 @@ binary_elasticnet_train = function(features, tgt, wt, lambda, s, alpha) {
                             y = tgt,
                             weights = wt,
                             family = "binomial",
-                            alpha = alpha,
+                            alpha  = alpha,
                             lambda = lambda),
        alpha = alpha,
        s = s)
