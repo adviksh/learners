@@ -92,24 +92,38 @@ regr_regsubsets_cv = function(x, y, weights = rep(1, length(y)), parallel = FALS
     if (rlang::is_installed("furrr") == FALSE) {
       stop("Running regr_regsubsets_cv in parallel requires the package 'furrr'")
     }
-    mapper = furrr::future_map
+
+    # shuffle columns to roughly even work out over parallel workers
+    path_loocv = furrr::future_map(sample(coef_cols),
+                                      function(which_cols, x, y, w) {
+                                        xs  = x[, which_cols, drop = FALSE]
+                                        fit = lm(y ~ xs, weights = w, model = FALSE)
+                                        hat = hatvalues(fit)
+
+                                        rsd_loo = fit$residuals / (1 - hat)
+
+                                        list(n_cols = length(which_cols),
+                                             mse    = mean((rsd_loo)^2),
+                                             y_hat  = y - rsd_loo)
+                                      },
+                                      x = x, y = y, w = weights)
   } else {
-    mapper = purrr::map
+
+    path_loocv = purrr::map(coef_cols,
+                               function(which_cols, x, y, w) {
+                                 xs  = x[, which_cols, drop = FALSE]
+                                 fit = lm(y ~ xs, weights = w, model = FALSE)
+                                 hat = hatvalues(fit)
+
+                                 rsd_loo = fit$residuals / (1 - hat)
+
+                                 list(n_cols = length(which_cols),
+                                      mse    = mean((rsd_loo)^2),
+                                      y_hat  = y - rsd_loo)
+                               },
+                               x = x, y = y, w = weights)
   }
 
-  path_loocv = mapper(coef_cols,
-                      function(which_cols, x, y, w) {
-                        xs  = x[, which_cols, drop = FALSE]
-                        fit = lm(y ~ xs, weights = w, model = FALSE)
-                        hat = hatvalues(fit)
-
-                        rsd_loo = fit$residuals / (1 - hat)
-
-                        list(n_cols = length(which_cols),
-                             mse    = mean((rsd_loo)^2),
-                             y_hat  = y - rsd_loo)
-                      },
-                      x = x, y = y, w = weights)
 
   return(path_loocv)
 }
