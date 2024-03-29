@@ -66,7 +66,11 @@ predict_oos.learner = function(object, features, tgt, wt = NULL, tune_folds, ...
 
   if (is.null(wt)) wt <- rep(1, nrow(features))
 
-  tuned_learner = tune(object, features, tgt, wt, tune_folds)
+  tuned_learner = tune(object,
+                       features = features,
+                       tgt      = tgt,
+                       wt       = wt,
+                       tune_folds = tune_folds)
 
   if (is.null(tuned_learner$tuned_fit)) {
 

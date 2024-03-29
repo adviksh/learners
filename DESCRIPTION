@@ -24,6 +24,7 @@ Suggests:
     glmnet,
     xgboost,
     doFuture,
-    future
+    future,
+    furrr
 VignetteBuilder: knitr
 ByteCompile: TRUE
