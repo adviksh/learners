@@ -7,17 +7,17 @@ binary_logistic <- structure(
   class = c("learner_constructor", "function"),
   function() {
     make_learner(
-      name = "binary_binary_logistic",
-      train_fun = function(features, tgt, wt) {
+      name = "binary_logistic",
+      train_fun = function(features, tgt, wt, engine = stats::glm.fit) {
 
         if (is.factor(tgt)) tgt <- as.integer(tgt) - 1L
 
         tgt <- as.matrix(tgt)
 
-        model <- stats::glm.fit(x = cbind(1, features),
-                                y = tgt,
-                                weights = wt,
-                                family = stats::binomial())
+        model <- engine(x = cbind(1, features),
+                        y = tgt,
+                        weights = wt,
+                        family = stats::binomial())
 
         model_coef <- stats::coef(model)
         model_coef[is.na(model_coef)] <- 0
