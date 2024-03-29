@@ -8,16 +8,16 @@ regr_ols <- structure(
   function() {
     make_learner(
       name = "regr_ols",
-      train_fun = function(features, tgt, wt) {
+      train_fun = function(features, tgt, wt, engine = stats::glm.fit) {
 
         if (is.factor(tgt)) tgt <- as.integer(tgt) - 1L
 
         tgt <- as.matrix(tgt)
 
-        model <- stats::glm.fit(x = cbind(1, features),
-                                y = tgt,
-                                weights = wt,
-                                family = stats::gaussian())
+        model <- engine(x = cbind(1, features),
+                        y = tgt,
+                        weights = wt,
+                        family = stats::gaussian())
 
         model_coef <- stats::coef(model)
         model_coef[is.na(model_coef)] <- 0
