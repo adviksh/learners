@@ -1,4 +1,5 @@
 #' Gradient Boosted Tree Classifier
+#' @export
 #'
 #' @description Construct a gradient boosted tree classifier using lightgbm
 #' All parameters can be passed as single values, or as vectors. Performs
@@ -10,9 +11,6 @@
 #'
 #' @param learning_rate learning rate.
 #' @param max_depth maximum depth of a tree.
-#' @param bagging_fraction bagging_fraction ratio of observations when constructing each
-#' tree. Values less than 1 will speed up computation, and may reduce
-#' overfitting.
 #' @param feature_fraction bagging_fraction ratio of columns when constructing
 #' each tree. Values less than 1 will speed up computation, and may reduce
 #' overfitting.
@@ -21,19 +19,23 @@
 binary_lgbm = structure(
   class = c("learner_constructor", "function"),
   function(learning_rate = 0.05,
-           max_depth = c(0:6),
-           bagging_fraction = 1,
+           num_leaves = 31,
+           max_depth  = -1,
            feature_fraction = 1,
+           force_col_wise = FALSE,
+           metric  = 'rmse',
            nrounds = 10000L,
            workers = 1) {
     make_learner(name       = "binary_lgbm",
                  tune_fun    = purrr::partial(binary_lgbm_tune,
                                               learning_rate = learning_rate,
+                                              num_leaves = num_leaves,
                                               max_depth = max_depth,
-                                              bagging_fraction = bagging_fraction,
                                               feature_fraction = feature_fraction,
-                                              nrounds = 10000L,
-                                              workers = 1),
+                                              force_col_wise = FALSE,
+                                              metric  = metric,
+                                              nrounds = nrounds,
+                                              workers = workers),
                  predict_fun = binary_lgbm_predict,
                  predict_tuned_fun = binary_lgbm_predict_tuned)
   }
@@ -41,20 +43,22 @@ binary_lgbm = structure(
 
 # Methods -----------------------------------------------------------------
 binary_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
-                            tune_folds, learning_rate, max_depth, bagging_fraction,
-                            feature_fraction, nrounds, workers) {
+                            tune_folds, learning_rate, num_leaves, max_depth,
+                            feature_fraction, force_col_wise,
+                            metric, nrounds, workers) {
 
-  binary_lgbm_design = expand.grid(max_depth = max_depth,
+  binary_lgbm_design = expand.grid(num_leaves = num_leaves,
+                                   max_depth  = max_depth,
                                    learning_rate = learning_rate,
-                                   bagging_fraction = bagging_fraction,
                                    feature_fraction = feature_fraction)
 
   binary_lgbm_tuning = purrr::pmap(binary_lgbm_design,
                                    function(...) {
                                      params = list(...)
-                                     params$num_threads = workers
-                                     params$objective   = 'binary'
-                                     params$metric      = 'auc'
+                                     params$num_threads    = workers
+                                     params$objective      = 'binary'
+                                     params$force_col_wise = force_col_wise
+                                     params$metric         = metric
 
                                      quiet_cv = purrr::quietly(lightgbm::lgb.cv)
 

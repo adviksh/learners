@@ -4,7 +4,7 @@
 \alias{binary_logistic}
 \title{Logistic Regression}
 \usage{
-binary_logistic()
+binary_logistic(engine = stats::glm.fit)
 }
 \value{
 A logistic regression model for binary outcomes,

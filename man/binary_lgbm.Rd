@@ -6,9 +6,11 @@
 \usage{
 binary_lgbm(
   learning_rate = 0.05,
-  max_depth = c(0:6),
-  bagging_fraction = 1,
+  num_leaves = 31,
+  max_depth = -1,
   feature_fraction = 1,
+  force_col_wise = FALSE,
+  metric = "rmse",
   nrounds = 10000L,
   workers = 1
 )
@@ -17,10 +19,6 @@ binary_lgbm(
 \item{learning_rate}{learning rate.}
 
 \item{max_depth}{maximum depth of a tree.}
-
-\item{bagging_fraction}{bagging_fraction ratio of observations when constructing each
-tree. Values less than 1 will speed up computation, and may reduce
-overfitting.}
 
 \item{feature_fraction}{bagging_fraction ratio of columns when constructing
 each tree. Values less than 1 will speed up computation, and may reduce

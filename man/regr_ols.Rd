@@ -4,7 +4,7 @@
 \alias{regr_ols}
 \title{OLS Regression}
 \usage{
-regr_ols()
+regr_ols(engine = stats::glm.fit)
 }
 \value{
 A linear regression model for continuous outcomes,
