@@ -52,7 +52,8 @@ binary_xgb_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                                    xgboost::xgb.cv,
                                    data = xgboost::xgb.DMatrix(data = features,
                                                                label = tgt,
-                                                               weight = wt),
+                                                               weight = wt,
+                                                               nthread = workers),
                                    folds = split(seq_along(tune_folds),
                                                  tune_folds),
                                    params  = list(objective   = "binary:logistic",
@@ -85,8 +86,12 @@ binary_xgb_tune <- function(features, tgt, wt = rep(1, nrow(features)),
 binary_xgb_train <- function(features, tgt, wt, params, nrounds) {
 
   if (is.factor(tgt)) tgt <- as.integer(tgt) - 1L
+  if (is.null(params$nthread)) params$workers = 1
 
-  list(fit = xgboost::xgboost(data = features, label = tgt, weight = wt,
+  list(fit = xgboost::xgboost(xgboost::xgb.DMatrix(data = features,
+                                                   label = tgt,
+                                                   weight = wt,
+                                                   nthread = params$nthread),
                               params = params,
                               verbose = FALSE,
                               nrounds = nrounds),
