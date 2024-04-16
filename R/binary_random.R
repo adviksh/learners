@@ -6,7 +6,7 @@
 binary_random <- structure(
   class = c("learner_constructor", "function"),
   function(seed = 1) {
-    make_learner(name        = "binary_sampmean",
+    make_learner(name        = "binary_random",
                  tune_fun    = purrr::partial(binary_random_tune, seed = seed),
                  train_fun   = binary_random_train,
                  predict_fun = binary_random_predict,
