@@ -46,3 +46,10 @@ tune_predict_oos_fold <- function(object, features, tgt, wt = NULL, tune_folds,
                                   which_fold, ...) {
   UseMethod("tune_predict_oos_fold")
 }
+
+#' @export
+#' @rdname methods
+train_predict_oos_fold <- function(object, features, tgt, wt = NULL, tune_folds,
+                                   which_fold, ...) {
+  UseMethod("train_predict_oos_fold")
+}

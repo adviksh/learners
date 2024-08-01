@@ -45,7 +45,7 @@ make_learner(
   ...
 )
 
-train_predict_oos_fold.learner(
+\method{train_predict_oos_fold}{learner}(
   object,
   features,
   tgt,

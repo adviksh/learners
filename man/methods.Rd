@@ -7,6 +7,7 @@
 \alias{predict_oos}
 \alias{tune_predict_oos}
 \alias{tune_predict_oos_fold}
+\alias{train_predict_oos_fold}
 \title{Methods}
 \usage{
 tune(object, features, tgt, wt = NULL, tune_folds, ...)
@@ -20,6 +21,16 @@ predict_oos(object, features, tgt, wt = NULL, tune_folds, ...)
 tune_predict_oos(object, features, tgt, wt = NULL, tune_folds, ...)
 
 tune_predict_oos_fold(
+  object,
+  features,
+  tgt,
+  wt = NULL,
+  tune_folds,
+  which_fold,
+  ...
+)
+
+train_predict_oos_fold(
   object,
   features,
   tgt,
