@@ -87,7 +87,7 @@ binary_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
                              split(seq_along(tune_folds), tune_folds),
                              function(b, f) {
                                data.frame(idx     = f,
-                                          tgt_hat = predict(b$booster, features[f,]))
+                                          tgt_hat = predict(b$booster, features[f,,drop=FALSE]))
                              })
 
   tgt_hat_tb = purrr::list_rbind(tgt_hat_list)
