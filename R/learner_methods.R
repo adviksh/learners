@@ -73,7 +73,7 @@ predict_oos.learner = function(object, features, tgt, wt = NULL, tune_folds, ...
                        tune_folds = tune_folds)
 
   if (is.null(tuned_learner$tuned_model)) {
-
+    stop("Aha!")
     fold_vals <- setdiff(unique(tune_folds), NA)
 
     pred_list <- lapply(fold_vals,
@@ -92,9 +92,9 @@ predict_oos.learner = function(object, features, tgt, wt = NULL, tune_folds, ...
 
   } else {
 
-    predictions = object$predict_tuned_fun(model      = object$tuned_model,
-                                           features   = features,
-                                           tune_folds = tune_folds)
+    predictions = tuned_learner$predict_tuned_fun(model      = tuned_learner$tuned_model,
+                                                  features   = features,
+                                                  tune_folds = tune_folds)
 
   }
 
