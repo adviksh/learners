@@ -62,10 +62,12 @@ binary_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
 
                                      quiet_cv = purrr::quietly(lightgbm::lgb.cv)
 
+                                     lgb_data = lightgbm::lgb.Dataset(data   = features,
+                                                                      label  = tgt,
+                                                                      weight = wt)
+
                                      out = quiet_cv(params = params,
-                                                    data   = features,
-                                                    label  = tgt,
-                                                    weight = wt,
+                                                    data   = lgb_data,
                                                     folds  = split(seq_along(tune_folds), tune_folds),
                                                     nrounds = nrounds,
                                                     early_stopping_rounds = 20L,
