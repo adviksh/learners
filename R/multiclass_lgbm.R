@@ -45,44 +45,47 @@ multiclass_lgbm = structure(
 
 # Methods -----------------------------------------------------------------
 multiclass_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
-                            tune_folds, learning_rate, num_leaves, max_depth,
-                            feature_fraction, force_col_wise,
-                            metric, nrounds, workers, num_class) {
-  
+                                tune_folds, learning_rate, num_leaves, max_depth,
+                                feature_fraction, force_col_wise,
+                                metric, nrounds, workers, num_class) {
+
   if (is.factor(tgt)) tgt = as.integer(tgt) - 1L
   if (min(tgt) != 0)  tgt = tgt - min(tgt)
-  
+
   multiclass_lgbm_design = expand.grid(num_leaves = num_leaves,
-                                   max_depth  = max_depth,
-                                   learning_rate = learning_rate,
-                                   feature_fraction = feature_fraction)
+                                       max_depth  = max_depth,
+                                       learning_rate = learning_rate,
+                                       feature_fraction = feature_fraction)
+
+  multiclass_lgbm_design = multiclass_lgbm_design[(multiclass_lgbm_design$max_depth == -1) |
+                                                    (multiclass_lgbm_design$num_leaves <= 2^multiclass_lgbm_design$max_depth), ]
 
   multiclass_lgbm_tuning = purrr::pmap(multiclass_lgbm_design,
-                                   function(...) {
-                                     params = list(...)
-                                     params$num_threads    = workers
-                                     params$objective      = 'multiclass'
-                                     params$force_col_wise = force_col_wise
-                                     params$metric         = metric
-                                     params$num_class      = num_class
+                                       function(...) {
+                                         params = list(...)
+                                         params$num_threads    = workers
+                                         params$objective      = 'multiclass'
+                                         params$force_col_wise = force_col_wise
+                                         params$metric         = metric
+                                         params$num_class      = num_class
 
-                                     quiet_cv = purrr::quietly(lightgbm::lgb.cv)                                     
+                                         quiet_cv = purrr::quietly(lightgbm::lgb.cv)
 
-                                     out = quiet_cv(params = params,
-                                                    data   = features,
-                                                    label  = tgt,
-                                                    weight = wt,
-                                                    folds  = split(seq_along(tune_folds), tune_folds),
-                                                    nrounds = nrounds,
-                                                    early_stopping_rounds = 20L,
-                                                    verbose = -1)
+                                         out = quiet_cv(params = params,
+                                                        data   = features,
+                                                        label  = tgt,
+                                                        weight = wt,
+                                                        folds  = split(seq_along(tune_folds), tune_folds),
+                                                        nrounds = nrounds,
+                                                        early_stopping_rounds = 20L,
+                                                        verbose = -1)
 
-                                     out$result
-                                   })
+                                         out$result
+                                       })
 
   multiclass_lgbm_tuning_df = purrr::map(multiclass_lgbm_tuning, tidy_lgbm_cv)
   multiclass_lgbm_tuning_df = purrr::list_rbind(multiclass_lgbm_tuning_df,
-                                            names_to = "idx_design")
+                                                names_to = "idx_design")
 
   best_param_row = which.min(multiclass_lgbm_tuning_df$rmse)
   best_fit_iter  = multiclass_lgbm_tuning_df$idx_design[best_param_row]
@@ -91,13 +94,13 @@ multiclass_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
   # Get tuned predictions
   tgt_hat_list = purrr::map2(best_fit$boosters,
                              split(seq_along(tune_folds), tune_folds),
-                             function(b, f) {                               
-                              tgt_hat = predict(b$booster, features[f,,drop=FALSE])
-                              cbind(f, tgt_hat) 
+                             function(b, f) {
+                               tgt_hat = predict(b$booster, features[f,,drop=FALSE])
+                               cbind(f, tgt_hat)
                              })
 
   tgt_hat_mtx = Reduce(rbind, tgt_hat_list)
-  tgt_hat_mtx = tgt_hat_mtx[order(tgt_hat_mtx[,1]), ]  
+  tgt_hat_mtx = tgt_hat_mtx[order(tgt_hat_mtx[,1]), ]
 
   # Return
   tune_res = list(
@@ -114,7 +117,7 @@ multiclass_lgbm_train = function(features, tgt, wt, params, nrounds) {
   if (min(tgt) != 0)  tgt = tgt - min(tgt)
 
   quiet_lgb = purrr::quietly(lightgbm::lightgbm)
-  fit = quiet_lgb(data = features, 
+  fit = quiet_lgb(data = features,
                   label = tgt,
                   weight = wt,
                   params = params,
