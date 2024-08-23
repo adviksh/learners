@@ -57,9 +57,6 @@ multiclass_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
                                        learning_rate = learning_rate,
                                        feature_fraction = feature_fraction)
 
-  multiclass_lgbm_design = multiclass_lgbm_design[(multiclass_lgbm_design$max_depth == -1) |
-                                                    (multiclass_lgbm_design$num_leaves <= 2^multiclass_lgbm_design$max_depth), ]
-
   multiclass_lgbm_tuning = purrr::pmap(multiclass_lgbm_design,
                                        function(...) {
                                          params = list(...)

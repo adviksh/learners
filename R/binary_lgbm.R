@@ -52,9 +52,6 @@ binary_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
                                    learning_rate = learning_rate,
                                    feature_fraction = feature_fraction)
 
-  binary_lgbm_design = binary_lgbm_design[(binary_lgbm_design$max_depth == -1) |
-                                            (binary_lgbm_design$num_leaves <= 2^binary_lgbm_design$max_depth), ]
-
   binary_lgbm_tuning = purrr::pmap(binary_lgbm_design,
                                    function(...) {
                                      params = list(...)
