@@ -93,7 +93,7 @@ binary_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
                              })
 
   tgt_hat_tb = purrr::list_rbind(tgt_hat_list)
-  tgt_hat_tb = tgt_hat_tb[rank(tgt_hat_tb$idx), ]
+  tgt_hat_tb = tgt_hat_tb[order(tgt_hat_tb$idx), ]
 
   # Return
   tune_res = list(
