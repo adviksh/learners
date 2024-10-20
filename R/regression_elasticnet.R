@@ -35,8 +35,6 @@ regr_elasticnet_tune <- function(features, tgt, wt = rep(1, nrow(features)),
     parallel = FALSE
   }
 
-  max_vars = min(min(table(tune_folds)) - 1,
-                 ncol(features))
 
   cv_fits = purrr::map(alpha,
                        function(aa) {
@@ -46,8 +44,7 @@ regr_elasticnet_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                                            foldid   = tune_folds,
                                            alpha    = aa,
                                            keep     = TRUE,
-                                           parallel = parallel,
-                                           pmax     = max_vars)
+                                           parallel = parallel)
                        })
 
   tidy_fit = function(fit, alpha) {
