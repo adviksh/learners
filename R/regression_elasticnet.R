@@ -39,20 +39,22 @@ regr_elasticnet_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                  ncol(features))
 
   cv_fits = purrr::map(alpha,
-                       ~glmnet::cv.glmnet(x = features,
-                                          y = tgt,
-                                          weights = wt,
-                                          foldid  = tune_folds,
-                                          alpha   = .x,
-                                          keep    = TRUE,
-                                          parallel = parallel,
-                                          pmax     = max_vars))
+                       function(aa) {
+                         glmnet::cv.glmnet(x        = features,
+                                           y        = tgt,
+                                           weights  = wt,
+                                           foldid   = tune_folds,
+                                           alpha    = aa,
+                                           keep     = TRUE,
+                                           parallel = parallel,
+                                           pmax     = max_vars)
+                       })
 
   tidy_fit = function(fit, alpha) {
 
     data.frame(alpha    = alpha,
                lambda   = fit$lambda,
-               loss      = fit$cvm)
+               loss     = fit$cvm)
   }
 
   extract_best_predictions = function(fits) {
@@ -65,8 +67,7 @@ regr_elasticnet_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                            best_fit$lambda)
 
     # Return
-    z_hat = best_fit$fit.preval[, lambda_min_idx]
-    as.numeric(plogis(z_hat))
+    best_fit$fit.preval[, lambda_min_idx]
   }
 
   hyperparams = purrr::map2(cv_fits, alpha, tidy_fit)
