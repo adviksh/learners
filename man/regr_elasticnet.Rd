@@ -4,7 +4,7 @@
 \alias{regr_elasticnet}
 \title{Elasticnet Regression}
 \usage{
-regr_elasticnet(alpha = seq(0, 1, length.out = 5))
+regr_elasticnet(alpha = seq(0, 1, length.out = 5), workers = 1)
 }
 \arguments{
 \item{alpha}{sequence of alpha values to search over}

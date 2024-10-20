@@ -1,4 +1,5 @@
 #' Elasticnet Regression
+#' @export
 #'
 #' @description Construct a elasticnet regression model with glmnet.
 #'
@@ -41,7 +42,7 @@ regr_elasticnet_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                        ~glmnet::cv.glmnet(x = features,
                                           y = tgt,
                                           weights = wt,
-                                          foldid  = tune_folds,                                        
+                                          foldid  = tune_folds,
                                           alpha   = .x,
                                           keep    = TRUE,
                                           parallel = parallel,
