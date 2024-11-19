@@ -86,7 +86,7 @@ regr_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
   regr_lgbm_tuning_df = purrr::list_rbind(regr_lgbm_tuning_df,
                                           names_to = "idx_design")
 
-  best_param_row = which.min(regr_lgbm_tuning_df[[metric]])
+  best_param_row = which.min(regr_lgbm_tuning_df$metric)
   best_fit_iter  = regr_lgbm_tuning_df$idx_design[best_param_row]
   best_fit = regr_lgbm_tuning[[best_fit_iter]]
 

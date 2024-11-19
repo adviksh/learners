@@ -32,7 +32,7 @@ tidy_lgbm_cv = function(result) {
 
   data.frame(params  = I(list(params)),
              nrounds = result$best_iter,
-             rmse    = result$best_score)
+             metric  = result$best_score)
 }
 
 bern_loglik <- function(tgt_hat, tgt, wt) {
