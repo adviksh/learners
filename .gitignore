@@ -3,3 +3,4 @@
 .RData
 .Ruserdata
 lightgbm.model
+**/*.DS_Store
