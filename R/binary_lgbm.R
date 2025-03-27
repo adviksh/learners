@@ -18,9 +18,10 @@
 #'
 binary_lgbm = structure(
   class = c("learner_constructor", "function"),
-  function(learning_rate = 0.05,
-           num_leaves = 31,
+  function(learning_rate = 0.2,
+           num_leaves = 7,
            max_depth  = -1,
+           min_data_in_leaf = 20,
            feature_fraction = 1,
            force_col_wise = FALSE,
            metric  = 'rmse',
@@ -31,6 +32,7 @@ binary_lgbm = structure(
                                               learning_rate = learning_rate,
                                               num_leaves = num_leaves,
                                               max_depth = max_depth,
+                                              min_data_in_leaf = min_data_in_leaf,
                                               feature_fraction = feature_fraction,
                                               force_col_wise = FALSE,
                                               metric  = metric,
@@ -44,19 +46,24 @@ binary_lgbm = structure(
 # Methods -----------------------------------------------------------------
 binary_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
                             tune_folds, learning_rate, num_leaves, max_depth,
+                            min_data_in_leaf,
                             feature_fraction, force_col_wise,
                             metric, nrounds, workers) {
 
   binary_lgbm_design = expand.grid(num_leaves = num_leaves,
                                    max_depth  = max_depth,
-                                   learning_rate = learning_rate,
+                                   min_data_in_leaf = min_data_in_leaf,
+                                   learning_rate    = learning_rate,
                                    feature_fraction = feature_fraction)
 
-  binary_lgbm_design = binary_lgbm_design[
-    (binary_lgbm_design$max_depth <= 0) |
-      (binary_lgbm_design$num_leaves <= 2^binary_lgbm_design$max_depth - 1)
-      ,
-    ]
+  # cap the number of leaves (2^binary_lgbm_design$max_depth - 1)
+  binary_lgbm_design$num_leaves = ifelse(binary_lgbm_design$max_depth <= 0,
+                                         binary_lgbm_design$num_leaves,
+                                         pmin(binary_lgbm_design$num_leaves,
+                                              2^binary_lgbm_design$max_depth - 1))
+
+  # remove redundant combinations
+  binary_lgbm_design = unique(binary_lgbm_design)
 
   binary_lgbm_tuning = purrr::pmap(binary_lgbm_design,
                                    function(...) {
