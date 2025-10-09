@@ -32,6 +32,12 @@ test_tune_binary <- function(constructor,
                     wt       = wt,
                     tune_folds = tune_folds),
                NA)
+  
+  expect_error(tune(base_learner,
+                    features = features,
+                    tgt      = tgt,
+                    tune_folds = tune_folds),
+               NA)
 }
 
 test_train_binary <- function(constructor,
