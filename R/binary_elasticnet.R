@@ -69,7 +69,7 @@ binary_elasticnet_tune = function(features, tgt, wt = rep(1, nrow(features)),
 
     # Return
     z_hat = best_fit$fit.preval[, lambda_min_idx]
-    as.numeric(plogis(z_hat))
+    as.numeric(stats::plogis(z_hat))
   }
 
   hyperparams = purrr::map2(cv_fits, alpha, tidy_fit)

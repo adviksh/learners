@@ -92,7 +92,7 @@ multiclass_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
   tgt_hat_list = purrr::map2(best_fit$boosters,
                              split(seq_along(tune_folds), tune_folds),
                              function(b, f) {
-                               tgt_hat = predict(b$booster, features[f,,drop=FALSE])
+                               tgt_hat = stats::predict(b$booster, features[f,,drop=FALSE])
                                cbind(f, tgt_hat)
                              })
 

@@ -97,8 +97,8 @@ regr_regsubsets_cv = function(x, y, weights = rep(1, length(y)), parallel = FALS
     path_loocv = furrr::future_map(sample(coef_cols),
                                       function(which_cols, x, y, w) {
                                         xs  = x[, which_cols, drop = FALSE]
-                                        fit = lm(y ~ xs, weights = w, model = FALSE)
-                                        hat = hatvalues(fit)
+                                        fit = stats::lm(y ~ xs, weights = w, model = FALSE)
+                                        hat = stats::hatvalues(fit)
 
                                         rsd_loo = fit$residuals / (1 - hat)
 
@@ -112,8 +112,8 @@ regr_regsubsets_cv = function(x, y, weights = rep(1, length(y)), parallel = FALS
     path_loocv = purrr::map(coef_cols,
                                function(which_cols, x, y, w) {
                                  xs  = x[, which_cols, drop = FALSE]
-                                 fit = lm(y ~ xs, weights = w, model = FALSE)
-                                 hat = hatvalues(fit)
+                                 fit = stats::lm(y ~ xs, weights = w, model = FALSE)
+                                 hat = stats::hatvalues(fit)
 
                                  rsd_loo = fit$residuals / (1 - hat)
 

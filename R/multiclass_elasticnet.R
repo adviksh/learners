@@ -87,7 +87,7 @@ multiclass_elasticnet_tune = function(features, tgt, wt = rep(1, nrow(features))
                                  lambda  = cv_fits[[best_mod_idx]]$lambda,
                                  s       = hyperparams$lambda[best_hyperparam_row],
                                  alpha   = hyperparams$alpha[best_hyperparam_row],
-                                 n_class = ifelse(is.na(n_class), n_class, length(unique(y))))
+                                 n_class = ifelse(is.na(n_class), length(unique(tgt)), n_class))
   )
 
   tune_res

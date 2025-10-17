@@ -6,6 +6,9 @@
 \usage{
 binary_random(seed = 1)
 }
+\arguments{
+\item{seed}{Random seed for replicability.}
+}
 \value{
 A model that makes random predictions for a binary outcome
 }

@@ -8,6 +8,7 @@ regr_lgbm(
   learning_rate = 0.05,
   num_leaves = 31,
   max_depth = -1,
+  min_data_in_leaf = 20,
   feature_fraction = 1,
   force_col_wise = FALSE,
   metric = "l2",

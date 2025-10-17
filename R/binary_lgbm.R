@@ -14,7 +14,7 @@
 #' @param feature_fraction bagging_fraction ratio of columns when constructing
 #' each tree. Values less than 1 will speed up computation, and may reduce
 #' overfitting.
-#' @param num_threads number of threads to use, to speed up training and prediction
+#' @param workers number of threads to use, to speed up training and prediction
 #'
 binary_lgbm = structure(
   class = c("learner_constructor", "function"),
@@ -102,7 +102,7 @@ binary_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
                              split(seq_along(tune_folds), tune_folds),
                              function(b, f) {
                                data.frame(idx     = f,
-                                          tgt_hat = predict(b$booster, features[f,,drop=FALSE]))
+                                          tgt_hat = stats::predict(b$booster, features[f,,drop=FALSE]))
                              })
 
   tgt_hat_tb = purrr::list_rbind(tgt_hat_list)

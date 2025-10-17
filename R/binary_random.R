@@ -1,6 +1,8 @@
 #' Random Noise for Classification
 #' @export
 #'
+#' @param seed Random seed for replicability.
+#'
 #' @return A model that makes random predictions for a binary outcome
 #'
 binary_random <- structure(
@@ -31,5 +33,5 @@ binary_random_train <- function(features, tgt, wt, seed) {
 
 binary_random_predict <- function(model, features) {
   set.seed(model)
-  runif(nrow(features))
+  stats::runif(nrow(features))
 }

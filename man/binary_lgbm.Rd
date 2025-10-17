@@ -5,9 +5,10 @@
 \title{Gradient Boosted Tree Classifier}
 \usage{
 binary_lgbm(
-  learning_rate = 0.05,
-  num_leaves = 31,
+  learning_rate = 0.2,
+  num_leaves = 7,
   max_depth = -1,
+  min_data_in_leaf = 20,
   feature_fraction = 1,
   force_col_wise = FALSE,
   metric = "rmse",
@@ -24,7 +25,7 @@ binary_lgbm(
 each tree. Values less than 1 will speed up computation, and may reduce
 overfitting.}
 
-\item{num_threads}{number of threads to use, to speed up training and prediction}
+\item{workers}{number of threads to use, to speed up training and prediction}
 }
 \value{
 A gradient boosted tree model for binary outcomes,
