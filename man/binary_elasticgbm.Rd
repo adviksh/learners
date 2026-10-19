@@ -35,3 +35,11 @@ with class 'learner'.
 \description{
 Logistic elasticnet regression, with gradient boosted trees to pick the residual
 }
+\details{
+During tuning, the out-of-fold elasticnet scores used as the LightGBM
+\code{init_score} for the training rows of each fold come from elasticnet fits
+that included that fold's validation rows. This is a mild second-order leak,
+so the tuned LightGBM metric may be slightly optimistic. At training time the
+elasticnet cross-validation folds are assigned with a fixed seed, so training
+is reproducible (the global RNG state is left unchanged).
+}

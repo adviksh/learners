@@ -1,7 +1,7 @@
 Package: learners
 Type: Package
 Title: API for Modeling
-Version: 0.0.0.9008
+Version: 0.0.1
 Encoding: UTF-8
 LazyData: true
 Authors@R: c(
@@ -23,6 +23,8 @@ Suggests:
     testthat (>= 2.1.0),
     glmnet,
     xgboost,
+    lightgbm,
+    leaps,
     doFuture,
     future,
     furrr

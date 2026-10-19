@@ -1,10 +1,17 @@
-#' Convex Combination for Regression
+#' Convex Combination for Binary Classification
 #' @export
 #'
-#' @return A model that fits a weighted average of the inputs, with weights
-#' all nonnegative and summing to 1.
+#' @return A model that fits a weighted average of the input probabilities,
+#' with weights all nonnegative and summing to 1. Any number of input columns
+#' is allowed.
 #'
-#' @details Does not use weights.
+#' @details Inputs should be predicted probabilities in [0, 1]. Predictions are
+#' the convex combination of the inputs, with weights chosen to maximize the
+#' weighted Bernoulli log-likelihood (fitted probabilities are clamped away
+#' from 0 and 1 inside the loss). With at most 3 input columns, the weights
+#' are chosen by exhaustive search over a simplex grid with 100 steps. With
+#' more columns, they are found by numerical optimization over
+#' softmax-parametrized weights. Uses observation weights.
 #'
 binary_convex_combo <- structure(
   class = c("learner_constructor", "function"),
@@ -20,27 +27,21 @@ binary_convex_combo <- structure(
 # Methods -----------------------------------------------------------------
 binary_convex_combo_train <- function(features, tgt, wt, n_steps) {
 
-  if (ncol(features) == 1) return(1)
+  features <- as.matrix(features)
+  if (is.null(wt)) wt <- rep(1, length(tgt))
+  if (is.factor(tgt)) tgt <- as.integer(tgt) - 1L
 
-  if (ncol(features) > 2) features <- features[,1:2]
+  eps <- 1e-15
 
-  possible_coefs <- simplex_grid(ncol(features), n_steps)
+  loss_fun <- function(fitted_vals) {
+    -apply(pmin(pmax(fitted_vals, eps), 1 - eps), 2, bern_loglik,
+           tgt = tgt, wt = wt)
+  }
 
-  fitted_vals <- stats::plogis(features %*% possible_coefs)
-  loglik      <- apply(fitted_vals, 2, bern_loglik,
-                       tgt = tgt,
-                       wt = wt)
-  best_fit    <- which.max(loglik)
-  best_coef   <- as.numeric(possible_coefs[,best_fit])
-
-  stats::setNames(best_coef, colnames(features))
-
+  convex_combo_weights(features, loss_fun, n_steps)
 }
 
 binary_convex_combo_predict <- function(model, features) {
-  z <- as.numeric(features[,1:2] %*% model)
-  stats::plogis(z)
+  # inputs should be probabilities; clamp guards against out-of-range inputs
+  pmin(pmax(as.numeric(as.matrix(features) %*% model), 0), 1)
 }
-
-
-# Helpers -----------------------------------------------------------------

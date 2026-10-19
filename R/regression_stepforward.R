@@ -21,15 +21,17 @@ regr_stepforward_tune = function(features, tgt, wt = rep(1, nrow(features)), tun
 
   if (workers > 1) {
     parallel = TRUE
-    future::plan(future::multicore, workers = workers)
+    oplan = future::plan(future::multicore, workers = workers)
+    on.exit(future::plan(oplan), add = TRUE)
   } else {
     parallel = FALSE
   }
 
   cv_fits = regr_regsubsets_cv(x = features,
                                y = tgt,
-                               weights  = wt,
-                               parallel = parallel)
+                               weights    = wt,
+                               tune_folds = tune_folds,
+                               parallel   = parallel)
 
   best_idx = which.min(purrr::map_dbl(cv_fits, "mse"))
 
@@ -50,17 +52,19 @@ regr_stepforward_train = function(features, tgt, wt, n_cols) {
                            weights = wt,
                            method  = 'forward',
                            nbest   = 1,
-                           nvmax   = n_cols)
+                           nvmax   = min(n_cols, ncol(features), nrow(features) - 2))
 
-  smr = leaps:::summary.regsubsets(fits)
+  smr = summary(fits)
 
-  fit_coef     = stats::coef(fits, n_cols)
-  fit_coef_idx = smr$which[n_cols,]
+  # the path may be shorter than requested
+  size = min(n_cols, nrow(smr$which))
+  fit_cols = which(smr$which[size, -1])
 
   model_coef = rep(0, ncol(features) + 1)
   names(model_coef) = c('(Intercept)', colnames(features))
 
-  model_coef[fit_coef_idx] = fit_coef
+  fit_coef = stats::coef(fits, size)
+  model_coef[c(1, fit_cols + 1)] = unname(fit_coef)
 
   return(model_coef)
 }
@@ -73,57 +77,75 @@ regr_stepforward_predict_tuned = function(model, features, tune_folds) {
   return(model)
 }
 
-regr_regsubsets_cv = function(x, y, weights = rep(1, length(y)), parallel = FALSE) {
+# Forward selection on the rows in `train_idx`; returns out-of-sample
+# predictions for the rows in `pred_idx` at every model size 1:nvmax
+# (a matrix with one column per size).
+regr_regsubsets_cv_fold = function(which_fold, x, y, w, tune_folds, nvmax) {
 
-  # fit forward regression
-  fits_leaps = leaps::regsubsets(x = x,
-                                 y = y,
-                                 weights = weights,
-                                 method = 'forward',
-                                 nbest = 1,
-                                 nvmax = min(ncol(x), nrow(x) - 2))
-  smr = summary(fits_leaps)
+  train_idx = which(tune_folds != which_fold)
+  pred_idx  = which(tune_folds == which_fold)
 
-  # extract coefficient path
-  coef_cols = apply(smr$which[,-1], 1, \(x) as.numeric(which(x)))
+  fits = leaps::regsubsets(x = x[train_idx, , drop = FALSE],
+                           y = y[train_idx],
+                           weights = w[train_idx],
+                           method  = 'forward',
+                           nbest   = 1,
+                           nvmax   = nvmax)
+  smr = summary(fits)
 
-  # get leave-one-out error
+  preds = matrix(NA_real_, nrow = length(pred_idx), ncol = nvmax)
+
+  for (ss in seq_len(min(nvmax, nrow(smr$which)))) {
+    cols = which(smr$which[ss, -1])
+    xs   = cbind(1, x[train_idx, cols, drop = FALSE])
+    beta = stats::lm.wfit(xs, y[train_idx], w[train_idx])$coefficients
+    beta[is.na(beta)] = 0
+
+    preds[, ss] = as.numeric(cbind(1, x[pred_idx, cols, drop = FALSE]) %*% beta)
+  }
+
+  # if the path ended early, carry the last model forward
+  last = min(nvmax, nrow(smr$which))
+  if (last < nvmax) {
+    preds[, (last + 1):nvmax] = preds[, last]
+  }
+
+  list(pred_idx = pred_idx, preds = preds)
+}
+
+# Honest K-fold CV over `tune_folds`: variable selection is redone inside each
+# training fold. Returns one element per model size with its CV mse,
+# out-of-fold predictions (y_hat, in original row order), and size (n_cols).
+regr_regsubsets_cv = function(x, y, weights = rep(1, length(y)),
+                              tune_folds, parallel = FALSE) {
+
+  fold_vals = sort(unique(tune_folds))
+  fold_n    = as.numeric(table(tune_folds))
+
+  # same size cap for every fold
+  nvmax = max(1, min(ncol(x), nrow(x) - max(fold_n) - 2))
+
   if (parallel) {
     if (rlang::is_installed("furrr") == FALSE) {
       stop("Running regr_regsubsets_cv in parallel requires the package 'furrr'")
     }
-
-    # shuffle columns to roughly even work out over parallel workers
-    path_loocv = furrr::future_map(sample(coef_cols),
-                                      function(which_cols, x, y, w) {
-                                        xs  = x[, which_cols, drop = FALSE]
-                                        fit = stats::lm(y ~ xs, weights = w, model = FALSE)
-                                        hat = stats::hatvalues(fit)
-
-                                        rsd_loo = fit$residuals / (1 - hat)
-
-                                        list(n_cols = length(which_cols),
-                                             mse    = mean((rsd_loo)^2),
-                                             y_hat  = y - rsd_loo)
-                                      },
-                                      x = x, y = y, w = weights)
+    fold_res = furrr::future_map(fold_vals, regr_regsubsets_cv_fold,
+                                 x = x, y = y, w = weights,
+                                 tune_folds = tune_folds, nvmax = nvmax)
   } else {
-
-    path_loocv = purrr::map(coef_cols,
-                               function(which_cols, x, y, w) {
-                                 xs  = x[, which_cols, drop = FALSE]
-                                 fit = stats::lm(y ~ xs, weights = w, model = FALSE)
-                                 hat = stats::hatvalues(fit)
-
-                                 rsd_loo = fit$residuals / (1 - hat)
-
-                                 list(n_cols = length(which_cols),
-                                      mse    = mean((rsd_loo)^2),
-                                      y_hat  = y - rsd_loo)
-                               },
-                               x = x, y = y, w = weights)
+    fold_res = purrr::map(fold_vals, regr_regsubsets_cv_fold,
+                          x = x, y = y, w = weights,
+                          tune_folds = tune_folds, nvmax = nvmax)
   }
 
+  oof = matrix(NA_real_, nrow = length(y), ncol = nvmax)
+  for (fr in fold_res) {
+    oof[fr$pred_idx, ] = fr$preds
+  }
 
-  return(path_loocv)
+  purrr::map(seq_len(nvmax), function(ss) {
+    list(n_cols = ss,
+         mse    = stats::weighted.mean((y - oof[, ss])^2, weights),
+         y_hat  = oof[, ss])
+  })
 }

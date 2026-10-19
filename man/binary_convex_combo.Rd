@@ -2,17 +2,24 @@
 % Please edit documentation in R/binary_convex_combination.R
 \name{binary_convex_combo}
 \alias{binary_convex_combo}
-\title{Convex Combination for Regression}
+\title{Convex Combination for Binary Classification}
 \usage{
 binary_convex_combo()
 }
 \value{
-A model that fits a weighted average of the inputs, with weights
-all nonnegative and summing to 1.
+A model that fits a weighted average of the input probabilities,
+with weights all nonnegative and summing to 1. Any number of input columns
+is allowed.
 }
 \description{
-Convex Combination for Regression
+Convex Combination for Binary Classification
 }
 \details{
-Does not use weights.
+Inputs should be predicted probabilities in [0, 1]. Predictions are
+the convex combination of the inputs, with weights chosen to maximize the
+weighted Bernoulli log-likelihood (fitted probabilities are clamped away
+from 0 and 1 inside the loss). With at most 3 input columns, the weights
+are chosen by exhaustive search over a simplex grid with 100 steps. With
+more columns, they are found by numerical optimization over
+softmax-parametrized weights. Uses observation weights.
 }

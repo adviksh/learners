@@ -10,7 +10,7 @@ binary_random <- structure(
   function(seed = 1) {
     make_learner(name        = "binary_random",
                  tune_fun    = purrr::partial(binary_random_tune, seed = seed),
-                 train_fun   = binary_random_train,
+                 train_fun   = purrr::partial(binary_random_train, seed = seed),
                  predict_fun = binary_random_predict,
                  predict_tuned_fun = NULL)
   }
@@ -32,6 +32,15 @@ binary_random_train <- function(features, tgt, wt, seed) {
 }
 
 binary_random_predict <- function(model, features) {
+  # draw reproducibly from the seed without disturbing the caller's RNG state
+  if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+    old_seed = get(".Random.seed", envir = globalenv(), inherits = FALSE)
+    on.exit(assign(".Random.seed", old_seed, envir = globalenv()), add = TRUE)
+  } else {
+    on.exit(if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+      rm(".Random.seed", envir = globalenv())
+    }, add = TRUE)
+  }
   set.seed(model)
   stats::runif(nrow(features))
 }

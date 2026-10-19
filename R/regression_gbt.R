@@ -1,11 +1,12 @@
-#' Gradient Boosted Tree Classifier
+#' Gradient Boosted Tree Regression
+#' @export
 #'
-#' @description Construct a gradient boosted tree classifier using xgboost.
+#' @description Construct a gradient boosted tree regression model using xgboost.
 #' All parameters can be passed as single values, or as vectors. Performs
 #' grid search over all combinations of provided values, using early stopping
 #' to select the best number of boosting iterations.
 #'
-#' @return A gradient boosted tree model for binary outcomes,
+#' @return A gradient boosted tree model for continuous outcomes,
 #' with class 'learner'.
 #'
 #' @param eta learning rate.
@@ -29,7 +30,8 @@ regr_gbt <- structure(
                                               max_depth = max_depth,
                                               subsample = subsample,
                                               colsample_bytree = colsample_bytree),
-                 predict_fun = regr_gbt_predict)
+                 predict_fun = regr_gbt_predict,
+                 predict_tuned_fun = regr_gbt_predict_tuned)
   }
 )
 
@@ -37,6 +39,8 @@ regr_gbt <- structure(
 regr_gbt_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                           tune_folds, eta, max_depth, subsample,
                           colsample_bytree) {
+
+  if (is.factor(tgt)) tgt <- as.integer(tgt) - 1L
 
   regr_gbt_design <- expand.grid(max_depth = max_depth,
                                  eta = eta,
@@ -54,23 +58,30 @@ regr_gbt_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                                                 objective = "reg:squarederror",
                                                 eval.metric = "rmse",
                                                 verbosity = 0),
+                                 prediction = TRUE,
                                  nrounds = 10000L,
                                  early_stopping_rounds = 20L,
                                  verbose = FALSE)
 
   regr_gbt_tuning_df <- purrr::map(regr_gbt_tuning, tidy_xgb_cv)
-  regr_gbt_tuning_df = purrr::list_rbind(regr_gbt_tuning_df)
+  regr_gbt_tuning_df = purrr::list_rbind(regr_gbt_tuning_df,
+                                         names_to = '.tune_index')
 
-  best_iter   <- which.min(regr_gbt_tuning_df$rmse)
+  best_iter       <- which.min(regr_gbt_tuning_df$rmse)
+  best_tune_index <- regr_gbt_tuning_df[[".tune_index"]][best_iter]
 
-  purrr::partial(regr_gbt_train,
-                 params  = regr_gbt_tuning_df$params[[best_iter]],
-                 nrounds = regr_gbt_tuning_df$nrounds[[best_iter]])
+  list(
+    tuned_model = regr_gbt_tuning[[best_tune_index]]$pred,
+    train_fun   = purrr::partial(regr_gbt_train,
+                                 params  = regr_gbt_tuning_df$params[[best_iter]],
+                                 nrounds = regr_gbt_tuning_df$nrounds[[best_iter]])
+  )
 }
 
 regr_gbt_train <- function(features, tgt, wt, params, nrounds) {
 
   if (is.factor(tgt)) tgt <- as.integer(tgt) - 1L
+  if (is.null(params$nthread)) params$nthread = 1
 
   list(fit = xgboost::xgboost(data = features, label = tgt, weight = wt,
                               params = params,
@@ -81,4 +92,8 @@ regr_gbt_train <- function(features, tgt, wt, params, nrounds) {
 
 regr_gbt_predict <- function(model, features) {
   as.numeric(stats::predict(model$fit, features))
+}
+
+regr_gbt_predict_tuned <- function(model, features, tune_folds) {
+  return(model)
 }

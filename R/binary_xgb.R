@@ -43,6 +43,8 @@ binary_xgb_tune <- function(features, tgt, wt = rep(1, nrow(features)),
                             tune_folds, eta, max_depth, subsample,
                             colsample_bytree, nrounds, workers) {
 
+  if (is.factor(tgt)) tgt <- as.integer(tgt) - 1L
+
   binary_xgb_design <- expand.grid(max_depth = max_depth,
                                    eta = eta,
                                    subsample = subsample,
@@ -86,7 +88,7 @@ binary_xgb_tune <- function(features, tgt, wt = rep(1, nrow(features)),
 binary_xgb_train <- function(features, tgt, wt, params, nrounds) {
 
   if (is.factor(tgt)) tgt <- as.integer(tgt) - 1L
-  if (is.null(params$nthread)) params$workers = 1
+  if (is.null(params$nthread)) params$nthread = 1
 
   list(fit = xgboost::xgboost(xgboost::xgb.DMatrix(data = features,
                                                    label = tgt,

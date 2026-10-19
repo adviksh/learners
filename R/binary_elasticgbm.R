@@ -1,5 +1,4 @@
 #' Elasticnet, then Boosted Trees
-#' @export
 #' 
 #' @description Logistic elasticnet regression, with gradient boosted trees to pick the residual
 #'
@@ -7,6 +6,13 @@
 #' @inheritParams binary_lgbm
 #' @param elastic_workers integer number of cores to use for parallelized tuning of elasticnet
 #' @param lgbm_workers integer number of cores to use for parallelized tuning of trees
+#'
+#' @details During tuning, the out-of-fold elasticnet scores used as the LightGBM
+#' \code{init_score} for the training rows of each fold come from elasticnet fits
+#' that included that fold's validation rows. This is a mild second-order leak,
+#' so the tuned LightGBM metric may be slightly optimistic. At training time the
+#' elasticnet cross-validation folds are assigned with a fixed seed, so training
+#' is reproducible (the global RNG state is left unchanged).
 #'
 #' @return A lostic elasticnet + gradient boosting model for binary outcomes,
 #' with class 'learner'.
@@ -54,7 +60,8 @@ binary_elasticgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
   if (elastic_workers > 1) {
     elastic_parallel = TRUE
     doFuture::registerDoFuture()
-    future::plan(future::multicore, workers = elastic_workers)
+    oplan = future::plan(future::multicore, workers = elastic_workers)
+    on.exit(future::plan(oplan), add = TRUE)
   } else {
     elastic_parallel = FALSE
   }
@@ -77,8 +84,7 @@ binary_elasticgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
   
   best_alpha   = alpha[which.min(cv_elnet_cvm)]
   best_elnet   = elnet_tuning[[ which.min(cv_elnet_cvm) ]]
-  lgt_elnet    = best_elnet$fit.preval[ , match(best_elnet$lambda, best_elnet$lambda.min) ]
-  lgt_elnet    = as.numeric(lgt_elnet)
+  lgt_elnet    = elnet_oof_link(best_elnet)
   
   
   # Tune LGBM from elastic net ------------------------------------------------------------------
@@ -125,7 +131,7 @@ binary_elasticgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
   lgbm_tuning_df = purrr::list_rbind(lgbm_tuning_df,
                                      names_to = "idx_design")
   
-  lgbm_best_param_row = which.min(lgbm_tuning_df$metric)
+  lgbm_best_param_row = lgbm_best_row(metric, lgbm_tuning_df$metric)
   lgbm_best_fit_iter  = lgbm_tuning_df$idx_design[lgbm_best_param_row]
   lgbm_best_fit = lgbm_tuning[[lgbm_best_fit_iter]] 
   
@@ -144,6 +150,27 @@ binary_elasticgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
   tune_res
 }
 
+# out-of-fold elasticnet link values at lambda.min (length n)
+elnet_oof_link = function(cv_fit) {
+  as.numeric(cv_fit$fit.preval[ , match(cv_fit$lambda.min, cv_fit$lambda) ])
+}
+
+# reproducible fold assignment that leaves the caller's RNG state untouched
+fixed_foldid = function(n, nfolds, seed = 1L) {
+
+  has_seed = exists(".Random.seed", envir = globalenv(), inherits = FALSE)
+  if (has_seed) old_seed = get(".Random.seed", envir = globalenv())
+  on.exit({
+    if (has_seed) assign(".Random.seed", old_seed, envir = globalenv())
+    else if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+      rm(".Random.seed", envir = globalenv())
+    }
+  })
+
+  set.seed(seed)
+  sample(rep_len(seq_len(nfolds), n))
+}
+
 binary_elasticgbm_train = function(features, tgt, wt,
                                    elnet_lambda, elnet_s, elnet_alpha, elnet_nfolds,
                                    lgbm_params, lgbm_nrounds) {
@@ -158,7 +185,7 @@ binary_elasticgbm_train = function(features, tgt, wt,
   cv_elnet_fit = glmnet::cv.glmnet(x = features,
                                    y = tgt,
                                    weights = wt,
-                                   nfolds  = elnet_nfolds,
+                                   foldid  = fixed_foldid(nrow(features), elnet_nfolds),
                                    family  = "binomial",
                                    keep    = TRUE,
                                    alpha   = elnet_alpha,
@@ -190,14 +217,3 @@ binary_elasticgbm_predict = function(model, features) {
   as.numeric(stats::plogis(lgt_elnet + lgt_lgbm))
 }
 
-
-tidy_lgbm_cv = function(result) {
-  
-  params = result$boosters[[1]]$booster$params
-  params$metric = params$metric[[1]]
-  params$early_stopping_round = NULL
-  
-  data.frame(params  = I(list(params)),
-             nrounds = result$best_iter,
-             metric  = result$best_score)
-}

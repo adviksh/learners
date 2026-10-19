@@ -36,7 +36,7 @@ regr_stacking_tune <- function(features, tgt, wt = NULL, tune_folds, learners) {
                       tgt = tgt,
                       wt  = wt,
                       tune_folds = tune_folds)
-  p_oos <- Reduce(cbind, p_oos)
+  p_oos <- do.call(cbind, lapply(p_oos, as.numeric))
 
   colnames(p_oos) <- names(learners)
 
@@ -54,21 +54,23 @@ regr_stacking_tune <- function(features, tgt, wt = NULL, tune_folds, learners) {
                                    tgt = tgt,
                                    wt = wt)
 
-    fit <- list(learners    = trained_learners,
-                metalearner = trained_metalearner)
-
-    return(fit)
+    list(learners    = trained_learners,
+         metalearner = metalearner)
   }
 
-  purrr::partial(regr_stacking_train,
-                 learners    = tuned_learners,
-                 metalearner = trained_metalearner)
+  list(
+    tuned_model = NULL,
+    train_fun   = purrr::partial(regr_stacking_train,
+                                 learners    = tuned_learners,
+                                 metalearner = trained_metalearner)
+  )
 }
 
 regr_stacking_predict <- function(object, features) {
 
   p_comp <- purrr::map(object$learners, stats::predict, features)
-  p_comp <- Reduce(cbind, p_comp)
+  p_comp <- do.call(cbind, lapply(p_comp, as.numeric))
+  colnames(p_comp) <- names(object$learners)
 
   stats::predict(object$metalearner, p_comp)
 

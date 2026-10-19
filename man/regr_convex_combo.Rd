@@ -8,11 +8,15 @@ regr_convex_combo()
 }
 \value{
 A model that fits a weighted average of the inputs, with weights
-all nonnegative and summing to 1.
+all nonnegative and summing to 1. Any number of input columns is allowed.
 }
 \description{
 Convex Combination for Regression
 }
 \details{
-Does not use weights.
+Minimizes the weighted sum of squared errors, using the
+observation weights \code{wt}. With at most 3 input columns, the weights are
+chosen by exhaustive search over a simplex grid with 100 steps. With more
+columns the grid grows combinatorially, so the weights are instead found
+by numerical optimization over softmax-parametrized weights.
 }

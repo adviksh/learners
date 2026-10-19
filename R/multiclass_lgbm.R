@@ -33,7 +33,7 @@ multiclass_lgbm = structure(
                                               num_leaves = num_leaves,
                                               max_depth = max_depth,
                                               feature_fraction = feature_fraction,
-                                              force_col_wise = FALSE,
+                                              force_col_wise = force_col_wise,
                                               metric  = metric,
                                               nrounds = nrounds,
                                               workers = workers,
@@ -68,10 +68,12 @@ multiclass_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
 
                                          quiet_cv = purrr::quietly(lightgbm::lgb.cv)
 
+                                         lgb_data = lightgbm::lgb.Dataset(data   = features,
+                                                                          label  = tgt,
+                                                                          weight = wt)
+
                                          out = quiet_cv(params = params,
-                                                        data   = features,
-                                                        label  = tgt,
-                                                        weight = wt,
+                                                        data   = lgb_data,
                                                         folds  = split(seq_along(tune_folds), tune_folds),
                                                         nrounds = nrounds,
                                                         early_stopping_rounds = 20L,
@@ -84,7 +86,7 @@ multiclass_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
   multiclass_lgbm_tuning_df = purrr::list_rbind(multiclass_lgbm_tuning_df,
                                                 names_to = "idx_design")
 
-  best_param_row = which.min(multiclass_lgbm_tuning_df$rmse)
+  best_param_row = lgbm_best_row(metric, multiclass_lgbm_tuning_df$metric)
   best_fit_iter  = multiclass_lgbm_tuning_df$idx_design[best_param_row]
   best_fit = multiclass_lgbm_tuning[[best_fit_iter]]
 
@@ -93,15 +95,16 @@ multiclass_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
                              split(seq_along(tune_folds), tune_folds),
                              function(b, f) {
                                tgt_hat = stats::predict(b$booster, features[f,,drop=FALSE])
+                               tgt_hat = matrix(tgt_hat, nrow = length(f))
                                cbind(f, tgt_hat)
                              })
 
   tgt_hat_mtx = Reduce(rbind, tgt_hat_list)
-  tgt_hat_mtx = tgt_hat_mtx[order(tgt_hat_mtx[,1]), ]
+  tgt_hat_mtx = tgt_hat_mtx[order(tgt_hat_mtx[,1]), , drop = FALSE]
 
   # Return
   tune_res = list(
-    tuned_model = tgt_hat_mtx[,-1],
+    tuned_model = tgt_hat_mtx[, -1, drop = FALSE],
     train_fun   = purrr::partial(multiclass_lgbm_train,
                                  params  = multiclass_lgbm_tuning_df$params[[best_param_row]],
                                  nrounds = multiclass_lgbm_tuning_df$nrounds[[best_param_row]]))
@@ -126,7 +129,10 @@ multiclass_lgbm_train = function(features, tgt, wt, params, nrounds) {
 }
 
 multiclass_lgbm_predict = function(model, features) {
-  as.numeric(stats::predict(model$fit, features))
+  # one column per class
+  matrix(stats::predict(model$fit, features),
+         nrow = nrow(features),
+         ncol = model$params$num_class)
 }
 
 multiclass_lgbm_predict_tuned = function(model, features, tune_folds) {

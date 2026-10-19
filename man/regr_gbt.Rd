@@ -2,7 +2,7 @@
 % Please edit documentation in R/regression_gbt.R
 \name{regr_gbt}
 \alias{regr_gbt}
-\title{Gradient Boosted Tree Classifier}
+\title{Gradient Boosted Tree Regression}
 \usage{
 regr_gbt(eta = 0.05, max_depth = 1:6, subsample = 1, colsample_bytree = 1)
 }
@@ -20,11 +20,11 @@ each tree. Values less than 1 will speed up computation, and may reduce
 overfitting.}
 }
 \value{
-A gradient boosted tree model for binary outcomes,
+A gradient boosted tree model for continuous outcomes,
 with class 'learner'.
 }
 \description{
-Construct a gradient boosted tree classifier using xgboost.
+Construct a gradient boosted tree regression model using xgboost.
 All parameters can be passed as single values, or as vectors. Performs
 grid search over all combinations of provided values, using early stopping
 to select the best number of boosting iterations.

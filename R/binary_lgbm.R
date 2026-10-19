@@ -34,7 +34,7 @@ binary_lgbm = structure(
                                               max_depth = max_depth,
                                               min_data_in_leaf = min_data_in_leaf,
                                               feature_fraction = feature_fraction,
-                                              force_col_wise = FALSE,
+                                              force_col_wise = force_col_wise,
                                               metric  = metric,
                                               nrounds = nrounds,
                                               workers = workers),
@@ -93,7 +93,7 @@ binary_lgbm_tune = function(features, tgt, wt = rep(1, nrow(features)),
   binary_lgbm_tuning_df = purrr::list_rbind(binary_lgbm_tuning_df,
                                             names_to = "idx_design")
 
-  best_param_row = which.min(binary_lgbm_tuning_df$metric)
+  best_param_row = lgbm_best_row(metric, binary_lgbm_tuning_df$metric)
   best_fit_iter  = binary_lgbm_tuning_df$idx_design[best_param_row]
   best_fit = binary_lgbm_tuning[[best_fit_iter]]
 

@@ -89,9 +89,21 @@ predict_oos.learner = function(object, features, tgt, wt = NULL, tune_folds, ...
 
   } else {
 
-    predictions = tuned_learner$predict_tuned_fun(model      = tuned_learner$tuned_model,
-                                                  features   = features,
-                                                  tune_folds = tune_folds)
+    # tune() only sees rows with non-NA folds, so the tuned predictions
+    # correspond to those rows. Place them back, leaving NA for holdout rows.
+    tune_idx = which(!is.na(tune_folds))
+
+    tuned_preds = tuned_learner$predict_tuned_fun(model      = tuned_learner$tuned_model,
+                                                  features   = features[tune_idx, , drop = FALSE],
+                                                  tune_folds = tune_folds[tune_idx])
+
+    if (is.matrix(tuned_preds)) {
+      predictions = matrix(NA_real_, nrow = length(tgt), ncol = ncol(tuned_preds))
+      predictions[tune_idx, ] = tuned_preds
+    } else {
+      predictions = rep(NA_real_, length(tgt))
+      predictions[tune_idx] = tuned_preds
+    }
 
   }
 
